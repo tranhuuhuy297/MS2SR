@@ -4,11 +4,16 @@ import sys
 sys.path.append('..')
 
 import time
+import math
 import models
 import torch
 import utils
 from tqdm import trange
 from routing import *
+
+from dictionary import RandomDictionary
+from ksvd import KSVD
+from pursuit import MatchingPursuit
 
 import warnings
 
@@ -16,6 +21,20 @@ import warnings
 warnings.simplefilter("ignore")
 warnings.filterwarnings("ignore", category=UserWarning)
 
+def get_psi(args):
+    X = utils.load_raw(args)
+
+    X = X[:int(X.shape[0] * 0.7), :]
+
+    X_temp = np.array([np.max(X[args.seq_len_x + i: args.seq_len_x + i + args.seq_len_y], axis=0) for i in range(10000)]).T
+
+    size_D = int(math.sqrt(X.shape[1]))
+
+    D = RandomDictionary(size_D, size_D)
+
+    psi, _ = KSVD(D, MatchingPursuit, int(args.random_rate * X.shape[1])).fit(X_temp, 100)
+
+    return psi
 
 def main(args, **model_kwargs):
     device = torch.device(args.device)
@@ -81,6 +100,7 @@ def main(args, **model_kwargs):
 
                     x = batch['x']  # [b, seq_x, n, f]
                     y = batch['y']  # [b, seq_y, n]
+                    # sys.exit()
 
                     if y.max() == 0: continue
                     loss, rse, mae, mse, mape, rmse = engine.train(x, y)
@@ -128,7 +148,8 @@ def main(args, **model_kwargs):
         y_gt = y_gt.cpu().data.numpy()
         yhat = yhat.cpu().data.numpy()
 
-        run_te(x_gt, y_gt, yhat, args)
+        # get X = psi * pred
+        run_te(x_gt, y_gt, np.dot(get_psi(args), yhat), args)
 
 
 if __name__ == "__main__":

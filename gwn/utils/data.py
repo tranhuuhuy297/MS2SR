@@ -1,10 +1,14 @@
 import os
 
-import numpy as np
 import torch
+import numpy as np
+import random as rd
+rd.seed(42)
+
+from .util import largest_indices
+
 from scipy.io import loadmat
 from torch.utils.data import Dataset, DataLoader
-
 
 class MinMaxScaler_torch():
 
@@ -64,7 +68,7 @@ class StandardScaler_torch():
 
 class TrafficDataset(Dataset):
 
-    def __init__(self, X, args, scaler=None):
+    def __init__(self, X, args, scaler=None, scaler_top_k=None):
         # save parameters
         self.args = args
 
@@ -72,8 +76,21 @@ class TrafficDataset(Dataset):
         self.out_seq_len = args.out_seq_len
         self.trunk = args.trunk
 
-        self.X = self.np2torch(X)
+        random_time_step = rd.randint(0, len(X))
+        # get top k biggest
 
+        top_k_index = largest_indices(X[random_time_step], int(args.random_rate/100 * X.shape[1]))
+        top_k_index = np.sort(top_k_index)[0]
+
+        # data train to get psi
+        self.X_top_k = X[:, top_k_index]
+
+        # data reconstruction by compressive sensing
+        X_reconstruction = np.zeros(X.shape)
+        X_reconstruction[:, top_k_index] = self.X_top_k
+
+        self.X = self.np2torch(X)
+        self.X_top_k = self.np2torch(X_reconstruction)
         self.n_timeslots, self.n_series = self.X.shape
 
         # learn scaler
@@ -83,8 +100,15 @@ class TrafficDataset(Dataset):
         else:
             self.scaler = scaler
 
+        if scaler_top_k is None:
+            self.scaler_top_k = StandardScaler_torch()
+            self.scaler_top_k.fit(self.X_top_k)
+        else:
+            self.scaler_top_k = scaler_top_k
+
         # transform if needed and convert to torch
         self.X_scaled = self.scaler.transform(self.X)
+        self.X_scaled_top_k = self.scaler_top_k.transform(self.X_top_k)
 
         if args.tod:
             self.tod = self.get_tod()
@@ -128,23 +152,35 @@ class TrafficDataset(Dataset):
                 mx[i] = torch.max(self.X_scaled[i - self.args.seq_len_x:i], dim=0)[0]
         return mx
 
+
     def __len__(self):
         return len(self.indices)
 
     def __getitem__(self, idx):
         t = self.indices[idx]
-
+        
         x = self.X_scaled[t:t + self.args.seq_len_x]  # step: t-> t + seq_x
         xgt = self.X[t:t + self.args.seq_len_x]  # step: t-> t + seq_x
         x = x.unsqueeze(dim=-1)  # add feature dim [seq_x, n, 1]
+
+        # top k
+        x_top_k = self.X_scaled_top_k[t:t + self.args.seq_len_x]  # step: t-> t + seq_x
+        xgt_top_k = self.X_top_k[t:t + self.args.seq_len_x]  # step: t-> t + seq_x
+        x_top_k = x_top_k.unsqueeze(dim=-1)  # add feature dim [seq_x, n, 1]
 
         if self.type == 'p1':
             y = self.X[t + self.args.seq_len_x: t + self.args.seq_len_x + self.args.seq_len_y]
         elif self.type == 'p2':
             y = torch.max(self.X[t + self.args.seq_len_x:
                                  t + self.args.seq_len_x + self.args.seq_len_y], dim=0)[0]
-
+            
             y = y.reshape(1, -1)
+
+            # top k
+            y_top_k = torch.max(self.X_top_k[t + self.args.seq_len_x:
+                                 t + self.args.seq_len_x + self.args.seq_len_y], dim=0)[0]
+            
+            y_top_k = y_top_k.reshape(1, -1)
 
             if self.args.tod:
                 tod = self.tod[t:t + self.args.seq_len_x]
@@ -171,7 +207,10 @@ class TrafficDataset(Dataset):
 
         y_gt = self.X[t + self.args.seq_len_x: t + self.args.seq_len_x + self.args.seq_len_y]
 
-        sample = {'x': x, 'y': y, 'x_gt': xgt, 'y_gt': y_gt}
+        y_gt_top_k = self.X_top_k[t + self.args.seq_len_x: t + self.args.seq_len_x + self.args.seq_len_y]
+
+        sample = {'x': x, 'y': y, 'x_gt': xgt, 'y_gt': y_gt, 
+                  'x_top_k': x_top_k, 'y_top_k': y_top_k, 'x_gt_top_k': xgt_top_k, 'y_gt_top_k': y_gt_top_k}
         return sample
 
     def transform(self, X):

@@ -13,6 +13,8 @@ def get_args():
                         choices=['abilene_tm', 'geant_tm', 'brain_tm', 'brain5_tm', 'brain15_tm', 'abilene15_tm',
                                  'brain10_tm', 'abilene10_tm'],
                         help='Dataset, (default abilene_tm)')
+    parser.add_argument('--run_cs', action='store_true', help='run with compressive sensing')
+    parser.add_argument('--random_rate', type=int, default=10)
     parser.add_argument('--datapath', type=str, default='../../data')
     parser.add_argument('--type', type=str, default='p2', choices=['p1', 'p2', 'p3'],
                         help='problem formulation (default p2)')
@@ -63,7 +65,7 @@ def get_args():
     parser.add_argument('--train_batch_size', type=int, default=256)
     parser.add_argument('--val_batch_size', type=int, default=256)
     parser.add_argument('--test_batch_size', type=int, default=1)
-    parser.add_argument('--device', type=str, default='cuda:0')
+    parser.add_argument('--device', type=str, default='cuda:2')
 
     parser.add_argument('--epochs', type=int, default=100, help='')
     parser.add_argument('--clip', type=int, default=3, help='Gradient Clipping')
@@ -115,6 +117,8 @@ def print_args(args):
     print('---------------------------------------------------------')
     print('    - dataset                :', args.dataset)
     print('    - num_series             :', args.nSeries)
+    print('    - comressive_sensing     :', args.run_cs)
+    print('    - random measure rate    : {}%'.format(args.random_rate))
     print('    - train size             : {}x{}'.format(args.train_size, args.nSeries))
     print('    - val size               : {}x{}'.format(args.val_size, args.nSeries))
     print('    - test size              : {}x{}'.format(args.test_size, args.nSeries))
