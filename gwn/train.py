@@ -21,7 +21,7 @@ import warnings
 warnings.simplefilter("ignore")
 warnings.filterwarnings("ignore", category=UserWarning)
 
-def get_psi(args):
+def get_psi(args, iterator=100):
     X = utils.load_raw(args)
 
     X = X[:int(X.shape[0] * 0.7), :]
@@ -32,7 +32,7 @@ def get_psi(args):
 
     D = RandomDictionary(size_D, size_D)
 
-    psi, _ = KSVD(D, MatchingPursuit, int(args.random_rate * X.shape[1])).fit(X_temp, 100)
+    psi, _ = KSVD(D, MatchingPursuit, int(args.random_rate * X.shape[1])).fit(X_temp, iterator)
 
     return psi
 
@@ -147,6 +147,9 @@ def main(args, **model_kwargs):
         x_gt = x_gt.cpu().data.numpy()  # [timestep, seq_x, seq_y]
         y_gt = y_gt.cpu().data.numpy()
         yhat = yhat.cpu().data.numpy()
+
+        # get psi
+        psi = get_psi(args)
 
         # get yhat_X = psi * yhat_S
         yhat_S = np.zeros(yhat.shape)
