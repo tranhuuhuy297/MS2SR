@@ -54,7 +54,7 @@ def main(args, **model_kwargs):
     else:
         raise ValueError('Dataset not found!')
 
-    train_loader, val_loader, test_loader, graphs = utils.get_dataloader(args)
+    train_loader, val_loader, test_loader, graphs, top_k_index = utils.get_dataloader(args)
 
     args.train_size, args.nSeries = train_loader.dataset.X.shape
     args.val_size = val_loader.dataset.X.shape[0]
@@ -148,8 +148,15 @@ def main(args, **model_kwargs):
         y_gt = y_gt.cpu().data.numpy()
         yhat = yhat.cpu().data.numpy()
 
-        # get X = psi * pred
-        run_te(x_gt, y_gt, np.dot(get_psi(args), yhat), args)
+        # get yhat_X = psi * yhat_S
+        yhat_S = np.zeros(yhat.shape)
+        yhat_S[:, top_k_index] = yhat
+        yhat_X = np.dot(psi, yhat_S.T) # yhat_X: (144, number_of_samples)
+
+        yhat_X = yhat_X.T
+
+        # run te
+        run_te(x_gt, y_gt, yhat_X, args)
 
 
 if __name__ == "__main__":

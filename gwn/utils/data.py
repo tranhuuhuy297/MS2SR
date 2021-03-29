@@ -68,7 +68,7 @@ class StandardScaler_torch():
 
 class TrafficDataset(Dataset):
 
-    def __init__(self, X, args, scaler=None, scaler_top_k=None):
+    def __init__(self, X, args, scaler=None, scaler_top_k=None, top_k_index=None):
         # save parameters
         self.args = args
 
@@ -76,18 +76,20 @@ class TrafficDataset(Dataset):
         self.out_seq_len = args.out_seq_len
         self.trunk = args.trunk
 
-        random_time_step = rd.randint(0, len(X))
         # get top k biggest
 
-        top_k_index = largest_indices(X[random_time_step], int(args.random_rate/100 * X.shape[1]))
-        top_k_index = np.sort(top_k_index)[0]
+        if top_k_index is None: 
+            random_time_step = rd.randint(0, len(X))
+            self.top_k_index = largest_indices(X[random_time_step], int(args.random_rate/100 * X.shape[1]))
+            self.top_k_index = np.sort(top_k_index)[0]
+        else: self.top_k_index = top_k_index
 
         # data train to get psi
-        self.X_top_k = X[:, top_k_index]
+        self.X_top_k = X[:, self.top_k_index]
 
         # data reconstruction by compressive sensing
         X_reconstruction = np.zeros(X.shape)
-        X_reconstruction[:, top_k_index] = self.X_top_k
+        X_reconstruction[:, self.top_k_index] = self.X_top_k
 
         self.X = self.np2torch(X)
         self.X_top_k = self.np2torch(X_reconstruction)
@@ -274,21 +276,27 @@ def get_dataloader(args):
 
     train, val, test = train_test_split(X)
 
+    random_time_step = rd.randint(0, len(train))
+    # get top k biggest
+
+    top_k_index = largest_indices(train[random_time_step], int(args.random_rate/100 * train.shape[1]))
+    top_k_index = np.sort(top_k_index)[0]
+
     # Training set
-    train_set = TrafficDataset(train, args=args, scaler=None)
+    train_set = TrafficDataset(train, args=args, scaler=None, top_k_index=top_k_index)
     train_loader = DataLoader(train_set,
                               batch_size=args.train_batch_size,
                               shuffle=True)
 
     # validation set
-    val_set = TrafficDataset(val, args=args, scaler=train_set.scaler)
+    val_set = TrafficDataset(val, args=args, scaler=train_set.scaler, top_k_index=top_k_index)
     val_loader = DataLoader(val_set,
                             batch_size=args.val_batch_size,
                             shuffle=False)
 
-    test_set = TrafficDataset(test, args=args, scaler=train_set.scaler)
+    test_set = TrafficDataset(test, args=args, scaler=train_set.scaler, top_k_index=top_k_index)
     test_loader = DataLoader(test_set,
                              batch_size=args.test_batch_size,
                              shuffle=False)
 
-    return train_loader, val_loader, test_loader, None
+    return train_loader, val_loader, test_loader, None, top_k_index
