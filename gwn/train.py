@@ -18,6 +18,8 @@ from pursuit import MatchingPursuit
 import warnings
 
 
+# ssh aiotlab@202.191.57.61 -p 1111
+
 warnings.simplefilter("ignore")
 warnings.filterwarnings("ignore", category=UserWarning)
 
@@ -98,9 +100,11 @@ def main(args, **model_kwargs):
                 train_loss, train_rse, train_mae, train_mse, train_mape, train_rmse = [], [], [], [], [], []
                 for iter, batch in enumerate(train_loader):
 
-                    x = batch['x']  # [b, seq_x, n, f]
-                    y = batch['y']  # [b, seq_y, n]
+                    # x = batch['x']  # [b, seq_x, n, f]
+                    # y = batch['y']  # [b, seq_y, n]
                     # sys.exit()
+                    x = batch['x_top_k']
+                    y = batch['y_top_k']
 
                     if y.max() == 0: continue
                     loss, rse, mae, mse, mape, rmse = engine.train(x, y)
@@ -152,7 +156,7 @@ def main(args, **model_kwargs):
         psi = get_psi(args)
 
         # get yhat_X = psi * yhat_S
-        yhat_S = np.zeros(yhat.shape)
+        yhat_S = np.zeros(y_gt.shape)
         yhat_S[:, top_k_index] = yhat
         yhat_X = np.dot(psi, yhat_S.T) # yhat_X: (144, number_of_samples)
 

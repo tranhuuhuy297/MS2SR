@@ -67,8 +67,11 @@ class Trainer():
         x_gt = []
         y_gt = []
         for _, batch in enumerate(test_loader):
-            x = batch['x']  # [b, seq_x, n, f]
-            y = batch['y']  # [b, seq_y, n]
+            # x = batch['x']  # [b, seq_x, n, f]
+            # y = batch['y']  # [b, seq_y, n]
+
+            x = batch['x_top_k']
+            y = batch['y_top_k']
 
             preds = model(x)
             preds = self.scaler.inverse_transform(preds)  # [bs, seq_y, n]
@@ -97,8 +100,11 @@ class Trainer():
         """Run validation."""
         val_loss, val_rse, val_mae, val_mse, val_mape, val_rmse = [], [], [], [], [], []
         for _, batch in enumerate(val_loader):
-            x = batch['x']  # [b, seq_x, n, f]
-            y = batch['y']  # [b, seq_y, n]
+            # x = batch['x']  # [b, seq_x, n, f]
+            # y = batch['y']  # [b, seq_y, n]
+
+            x = batch['x_top_k']
+            y = batch['y_top_k']
 
             metrics = self._eval(x, y)
             val_loss.append(metrics[0])
