@@ -199,6 +199,7 @@ def ls2sr_p2(yhat, y_gt, x_gt, G, segments, te_step, args):
                                           gt_tms=y_gt[i], p_solution=solution, nNodes=args.nNodes)
         # print(np.sum(y_gt[i]), ' ', std_mean, ' ', std_std, ' ', np.mean(u), ' ', theo_lamda)
         dynamicity[i] = [np.sum(y_gt[i]), std_mean, std_std, np.sum(std), np.mean(u), theo_lamda]
+        _solution = solution.copy()
         results.append((u, solution))
 
     mlu, solution = extract_results(results)
