@@ -65,7 +65,7 @@ def get_args():
     parser.add_argument('--train_batch_size', type=int, default=256)
     parser.add_argument('--val_batch_size', type=int, default=256)
     parser.add_argument('--test_batch_size', type=int, default=1)
-    parser.add_argument('--device', type=str, default='cuda:3')
+    parser.add_argument('--device', type=str, default='cuda:2')
 
     parser.add_argument('--epochs', type=int, default=100, help='')
     parser.add_argument('--clip', type=int, default=3, help='Gradient Clipping')

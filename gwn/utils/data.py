@@ -64,7 +64,7 @@ class StandardScaler_torch():
             data = data.reshape(data_size)
 
         return data
-
+    
 
 def granularity(data, k):
     if k == 1:
