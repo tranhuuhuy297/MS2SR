@@ -22,6 +22,32 @@ import warnings
 warnings.simplefilter("ignore")
 warnings.filterwarnings("ignore", category=UserWarning)
 
+def get_psi(args, samples=10000, iterator=100):
+    X = utils.load_raw(args)
+
+    X = X[:samples, :]
+
+    X_temp = np.array([np.max(X[args.seq_len_x + i: \
+        args.seq_len_x + i + args.seq_len_y], axis=0) for i in range(samples - args.seq_len_x - args.seq_len_y)]).T
+
+    size_D = int(math.sqrt(X.shape[1]))
+
+    D = RandomDictionary(size_D, size_D)
+
+    psi, _ = KSVD(D, MatchingPursuit, int(args.random_rate/100 * X.shape[1])).fit(X_temp, iterator)
+
+    return psi
+
+def get_phi(args):
+    X = utils.load_raw(args)
+    phi = np.zeros((int(args.random_rate/100 * X.shape[1]), X.shape[1]))
+
+    for i in range(phi.shape[1]):
+        d = np.random.randint(phi.shape[0])
+        phi[d, i] = 1
+    
+    return phi
+
 
 def main(args, **model_kwargs):
     device = torch.device(args.device)
@@ -136,32 +162,6 @@ def main(args, **model_kwargs):
 
     print(yhat[0, 0, :])
     print(y_real[0, 0, :])
-
-def get_psi(args, samples=10000, iterator=100):
-    X = utils.load_raw(args)
-
-    X = X[:samples, :]
-
-    X_temp = np.array([np.max(X[args.seq_len_x + i: \
-        args.seq_len_x + i + args.seq_len_y], axis=0) for i in range(samples - args.seq_len_x - args.seq_len_y)]).T
-
-    size_D = int(math.sqrt(X.shape[1]))
-
-    D = RandomDictionary(size_D, size_D)
-
-    psi, _ = KSVD(D, MatchingPursuit, int(args.random_rate/100 * X.shape[1])).fit(X_temp, iterator)
-
-    return psi
-
-def get_phi(args):
-    X = utils.load_raw(args)
-    phi = np.zeros((int(args.random_rate/100 * X.shape[1]), X.shape[1]))
-
-    for i in range(phi.shape[1]):
-        d = np.random.randint(phi.shape[0])
-        phi[d, i] = 1
-    
-    return phi
 
     # run TE
     if args.run_te:
