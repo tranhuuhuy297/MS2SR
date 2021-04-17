@@ -1,3 +1,5 @@
+import numpy as np
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -7,7 +9,6 @@ from torch.nn import BatchNorm2d, Conv1d, Conv2d, ModuleList, Parameter
 def nconv(x, A):
     """Multiply x by adjacency matrix along source node axis"""
     return torch.einsum('ncvl,vw->ncwl', (x, A)).contiguous()
-
 
 class GraphConvNet(nn.Module):
     def __init__(self, c_in, c_out, dropout, support_len=3, order=2):

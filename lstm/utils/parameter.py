@@ -11,6 +11,8 @@ def get_args():
     parser.add_argument('--seed', type=int, default=1)
     parser.add_argument('--dataset', type=str, default='abilene_tm',
                         choices=['abilene_tm', 'geant_tm', 'brain_tm', 'sinet_sys_tm'])
+    parser.add_argument('--k', type=int, default=1, help='granularity scale', choices=[1, 2, 3])
+    parser.add_argument('--random_rate', type=int, default=10)
     parser.add_argument('--datapath', type=str, default='../../data')
     parser.add_argument('--type', type=str, default='p2', choices=['p2'])
     parser.add_argument('--trunk', type=int, default=3)
@@ -25,7 +27,7 @@ def get_args():
     parser.add_argument('--seq_len_x', type=int, default=64, help='')
     parser.add_argument('--seq_len_y', type=int, default=12, help='')
 
-    parser.add_argument('--layers', type=int, default=2, help='')
+    parser.add_argument('--layers', type=int, default=1, help='')
     parser.add_argument('--in_dim', type=int, default=1, help='')
     parser.add_argument('--out_dim', type=int, default=1, help='')
     parser.add_argument('--hidden', type=int, default=64, help='Number of channels for internal conv')
@@ -39,7 +41,7 @@ def get_args():
     parser.add_argument('--train_batch_size', type=int, default=4)
     parser.add_argument('--val_batch_size', type=int, default=4)
     parser.add_argument('--test_batch_size', type=int, default=1)
-    parser.add_argument('--device', type=str, default='cuda:0')
+    parser.add_argument('--device', type=str, default='cuda:2')
 
     parser.add_argument('--epochs', type=int, default=100, help='')
     parser.add_argument('--clip', type=int, default=3, help='Gradient Clipping')
@@ -87,6 +89,8 @@ def print_args(args):
     print('[+] Time-series prediction experiment')
     print('---------------------------------------------------------')
     print('    - dataset                :', args.dataset)
+    print('    - granularity scale      :', args.k)
+    print('    - random measure rate    : {}%'.format(args.random_rate))
     print('    - num_series             :', args.nSeries)
     print('    - train size             : {}x{}'.format(args.train_size, args.nSeries))
     print('    - val size               : {}x{}'.format(args.val_size, args.nSeries))

@@ -64,6 +64,16 @@ class StandardScaler_torch():
             data = data.reshape(data_size)
 
         return data
+    
+
+def granularity(data, k):
+    if k == 1:
+        return data
+    else:
+        newdata = [np.mean(data[i:i + k], axis=0) for i in range(0, data.shape[0], k)]
+        newdata = np.asarray(newdata)
+        print('new data: ', newdata.shape)
+        return newdata
 
 
 class TrafficDataset(Dataset):
@@ -76,8 +86,12 @@ class TrafficDataset(Dataset):
         self.out_seq_len = args.out_seq_len
         self.trunk = args.trunk
 
-        # get top k biggest
+        self.k = args.k  # granularity
 
+        self.oX = np.copy(X)
+        self.oX = self.np2torch(self.oX)
+
+        # get top k biggest
         if top_k_index is None: 
             random_time_step = rd.randint(0, len(X))
             self.top_k_index = largest_indices(X[random_time_step], int(args.random_rate/100 * X.shape[1]))
@@ -92,7 +106,8 @@ class TrafficDataset(Dataset):
         X_reconstruction[:, self.top_k_index] = self.X_top_k
 
         self.X = self.np2torch(X)
-        self.X_top_k = self.np2torch(X_reconstruction)
+        self.X_top_k = self.np2torch(self.X_top_k)
+
         self.n_timeslots, self.n_series = self.X.shape
 
         # learn scaler
@@ -162,7 +177,8 @@ class TrafficDataset(Dataset):
         t = self.indices[idx]
         
         x = self.X_scaled[t:t + self.args.seq_len_x]  # step: t-> t + seq_x
-        xgt = self.X[t:t + self.args.seq_len_x]  # step: t-> t + seq_x
+        # xgt = self.X[t:t + self.args.seq_len_x]  # step: t-> t + seq_x
+        xgt = self.oX[t * self.k:(t + self.args.seq_len_x) * self.k]
         x = x.unsqueeze(dim=-1)  # add feature dim [seq_x, n, 1]
 
         # top k
@@ -207,12 +223,15 @@ class TrafficDataset(Dataset):
 
             y = torch.stack(y, dim=0)
 
-        y_gt = self.X[t + self.args.seq_len_x: t + self.args.seq_len_x + self.args.seq_len_y]
-
+        # ground truth data for doing traffic engineering
+        y_gt = self.oX[(t + self.args.seq_len_x) * self.k:
+                       (t + self.args.seq_len_x + self.args.seq_len_y) * self.k]
+                       
         y_gt_top_k = self.X_top_k[t + self.args.seq_len_x: t + self.args.seq_len_x + self.args.seq_len_y]
 
         sample = {'x': x, 'y': y, 'x_gt': xgt, 'y_gt': y_gt, 
-                  'x_top_k': x_top_k, 'y_top_k': y_top_k, 'x_gt_top_k': xgt_top_k, 'y_gt_top_k': y_gt_top_k}
+                  'x_top_k': x_top_k, 'y_top_k': y_top_k, 
+                  'x_gt_top_k': xgt_top_k, 'y_gt_top_k': y_gt_top_k}
         return sample
 
     def transform(self, X):

@@ -27,6 +27,7 @@ warnings.filterwarnings("ignore", category=UserWarning)
 def get_psi(args, iterator=100):
     X = utils.load_raw(args)
 
+<<<<<<< HEAD
     # X = X[:10100, :]
 
     X = X[:1100, :]
@@ -36,6 +37,12 @@ def get_psi(args, iterator=100):
     X_temp = np.array([np.max(X[args.seq_len_x + i: args.seq_len_x + i + args.seq_len_y], axis=0) for i in range(1000)]).T
 
     # X_temp = cp.asarray(X_temp)
+=======
+    X = X[:10000, :]
+
+    X_temp = np.array([np.max(X[args.seq_len_x + i: \
+        args.seq_len_x + i + args.seq_len_y], axis=0) for i in range(10000 - args.seq_len_x - args.seq_len_y)]).T
+>>>>>>> huy174
 
     size_D = int(math.sqrt(X.shape[1]))
 
@@ -159,18 +166,27 @@ def main(args, **model_kwargs):
         y_gt = y_gt.cpu().data.numpy()
         yhat = yhat.cpu().data.numpy()
 
+        print(ygt[0, 0, :])
+
         # get psi
-        psi = get_psi(args)
+        # psi = get_psi(args)
+
+        # yhat: (test_size - seq_x - seq_y, 1, number flows - 144)
+        # ygt:  (test_size - seq_x - seq_y, seq_y, number flows - 144)
 
         # get yhat_X = psi * yhat_S
-        yhat_S = np.zeros(y_gt.shape)
-        yhat_S[:, top_k_index] = yhat
-        yhat_X = np.dot(psi, yhat_S.T) # yhat_X: (144, number_of_samples)
+        # yhat_S = np.zeros(y_gt.shape)
+        # yhat_S[:, top_k_index] = yhat
 
-        yhat_X = yhat_X.T
+        # yhat_S = yhat
+        # yhat_X = np.zeros(yhat_S.shape)
+        # for i in range(yhat_X.shape[0]):
+        #     yhat_X[i] = np.dot(psi.matrix, yhat_S[i].T).T
 
-        # run te
-        run_te(x_gt, y_gt, yhat_X, args)
+        # # yhat_X = yhat_X.T
+
+        # # run te
+        # run_te(x_gt, y_gt, yhat_X, args)
 
 
 if __name__ == "__main__":
