@@ -1,6 +1,6 @@
 import pandas as pd
 import torch.optim as optim
-from adabelief_pytorch import AdaBelief
+# from adabelief_pytorch import AdaBelief
 
 from .metric import *
 
@@ -9,11 +9,11 @@ class Trainer():
     def __init__(self, model, scaler, scaler_top_k, lrate, wdecay, clip=3, lr_decay_rate=.97, lossfn='mae'):
         self.model = model
 
-        # self.optimizer = optim.Adam(self.model.parameters(), lr=lrate, weight_decay=wdecay)
-        self.optimizer = AdaBelief(self.model.parameters(), lr=1e-3, \
-            eps=1e-16, betas=(0.9,0.999), \
-            weight_decay=1.2e-6, fixed_decay=False, amsgrad=False, \
-            weight_decouple=False, rectify=False)
+        self.optimizer = optim.Adam(self.model.parameters(), lr=lrate, weight_decay=wdecay)
+#         self.optimizer = AdaBelief(self.model.parameters(), lr=1e-3, \
+#             eps=1e-16, betas=(0.9,0.999), \
+#             weight_decay=1.2e-6, fixed_decay=False, amsgrad=False, \
+#             weight_decouple=False, rectify=False)
         self.scaler = scaler
         self.scaler_top_k = scaler_top_k
         self.clip = clip
