@@ -72,6 +72,7 @@ class MatchingPursuit(Pursuit):
                 if np.isclose(alpha, 0):
                     break
                 coeffs[gamma] += alpha
+                # coeffs[coeffs < 0] = 0
                 i += 1
                 if self.sparsity:
                     finished = np.count_nonzero(coeffs) >= self.sparsity

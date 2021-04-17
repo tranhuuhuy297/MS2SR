@@ -1,15 +1,21 @@
 import pandas as pd
 import torch.optim as optim
+from adabelief_pytorch import AdaBelief
 
 from .metric import *
 
 
 class Trainer():
-    def __init__(self, model, scaler, lrate, wdecay, clip=3, lr_decay_rate=.97, lossfn='mae'):
+    def __init__(self, model, scaler, scaler_top_k, lrate, wdecay, clip=3, lr_decay_rate=.97, lossfn='mae'):
         self.model = model
 
-        self.optimizer = optim.Adam(self.model.parameters(), lr=lrate, weight_decay=wdecay)
+        # self.optimizer = optim.Adam(self.model.parameters(), lr=lrate, weight_decay=wdecay)
+        self.optimizer = AdaBelief(self.model.parameters(), lr=1e-3, \
+            eps=1e-16, betas=(0.9,0.999), \
+            weight_decay=1.2e-6, fixed_decay=False, amsgrad=False, \
+            weight_decouple=False, rectify=False)
         self.scaler = scaler
+        self.scaler_top_k = scaler_top_k
         self.clip = clip
         self.scheduler = optim.lr_scheduler.LambdaLR(
             self.optimizer, lr_lambda=lambda epoch: lr_decay_rate ** epoch)
@@ -26,8 +32,8 @@ class Trainer():
             raise ValueError('Loss fn not found!')
 
     @classmethod
-    def from_args(cls, model, scaler, args):
-        return cls(model, scaler, args.learning_rate, args.weight_decay, clip=args.clip,
+    def from_args(cls, model, scaler, scaler_top_k, args):
+        return cls(model, scaler, scaler_top_k, args.learning_rate, args.weight_decay, clip=args.clip,
                    lr_decay_rate=args.lr_decay_rate, lossfn=args.loss_fn)
 
     def train(self, input, real_val):
@@ -36,7 +42,7 @@ class Trainer():
         # input = torch.nn.functional.pad(input, (1, 0, 0, 0))
 
         output = self.model(input)  # now, output = [bs, out_seq_len, n]
-        predict = self.scaler.inverse_transform(output)
+        predict = self.scaler_top_k.inverse_transform(output)
 
         loss = self.lossfn(predict, real_val)
         rse, mae, mse, mape, rmse = calc_metrics(predict, real_val)
@@ -52,7 +58,7 @@ class Trainer():
 
         output = self.model(input)  # now, output = [bs, out_seq_len, n]
 
-        predict = self.scaler.inverse_transform(output)
+        predict = self.scaler_top_k.inverse_transform(output)
 
         predict = torch.clamp(predict, min=0., max=10e10)
         loss = self.lossfn(predict, real_val)
@@ -67,11 +73,14 @@ class Trainer():
         x_gt = []
         y_gt = []
         for _, batch in enumerate(test_loader):
-            x = batch['x']  # [b, seq_x, n, f]
-            y = batch['y']  # [b, 1, n]
+            # x = batch['x']  # [b, seq_x, n, f]
+            # y = batch['y']  # [b, 1, n]
+
+            x = batch['x_top_k']
+            y = batch['y_top_k']
 
             preds = model(x)
-            preds = self.scaler.inverse_transform(preds)  # [bs, 1, n]
+            preds = self.scaler_top_k.inverse_transform(preds)  # [bs, 1, n]
             outputs.append(preds)
             y_real.append(y)
             x_gt.append(batch['x_gt'])  # [b, seq_x, n]
@@ -97,8 +106,11 @@ class Trainer():
         """Run validation."""
         val_loss, val_rse, val_mae, val_mse, val_mape, val_rmse = [], [], [], [], [], []
         for _, batch in enumerate(val_loader):
-            x = batch['x']  # [b, seq_x, n, f]
-            y = batch['y']  # [b, 1, n]
+            # x = batch['x']  # [b, seq_x, n, f]
+            # y = batch['y']  # [b, 1, n]
+
+            x = batch['x_top_k']
+            y = batch['y_top_k']
 
             metrics = self._eval(x, y)
             val_loss.append(metrics[0])

@@ -153,8 +153,10 @@ def main(args, **model_kwargs):
         y_gt = y_gt.cpu().data.numpy()
         yhat = yhat.cpu().data.numpy()
 
+        print(ygt[0, 0, :])
+
         # get psi
-        psi = get_psi(args)
+        # psi = get_psi(args)
 
         # yhat: (test_size - seq_x - seq_y, 1, number flows - 144)
         # ygt:  (test_size - seq_x - seq_y, seq_y, number flows - 144)
@@ -163,15 +165,15 @@ def main(args, **model_kwargs):
         # yhat_S = np.zeros(y_gt.shape)
         # yhat_S[:, top_k_index] = yhat
 
-        yhat_S = yhat
-        yhat_X = np.zeros(yhat_S.shape)
-        for i in range(yhat_X.shape[0]):
-            yhat_X[i] = np.dot(psi.matrix, yhat_S[i].T).T
+        # yhat_S = yhat
+        # yhat_X = np.zeros(yhat_S.shape)
+        # for i in range(yhat_X.shape[0]):
+        #     yhat_X[i] = np.dot(psi.matrix, yhat_S[i].T).T
 
-        # yhat_X = yhat_X.T
+        # # yhat_X = yhat_X.T
 
-        # run te
-        run_te(x_gt, y_gt, yhat_X, args)
+        # # run te
+        # run_te(x_gt, y_gt, yhat_X, args)
 
 
 if __name__ == "__main__":

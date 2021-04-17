@@ -1,14 +1,26 @@
+import os
 import sys
-import time
 
 sys.path.append('..')
-from routing import *
 
+import time
+import math
 import models
-import numpy as np
 import torch
 import utils
 from tqdm import trange
+from routing import *
+
+from dictionary import RandomDictionary
+from ksvd import KSVD
+from pursuit import MatchingPursuit
+
+import warnings
+
+# ssh aiotlab@202.191.57.61 -p 1111
+
+warnings.simplefilter("ignore")
+warnings.filterwarnings("ignore", category=UserWarning)
 
 
 def main(args, **model_kwargs):
@@ -29,7 +41,7 @@ def main(args, **model_kwargs):
     else:
         raise ValueError('Dataset not found!')
 
-    train_loader, val_loader, test_loader, graphs = utils.get_dataloader(args)
+    train_loader, val_loader, test_loader, graphs, top_k_index = utils.get_dataloader(args)
 
     args.train_size, args.nSeries = train_loader.dataset.X.shape
     args.val_size = val_loader.dataset.X.shape[0]
@@ -48,7 +60,8 @@ def main(args, **model_kwargs):
     model = models.get_model(args)
     logger = utils.Logger(args)
 
-    engine = utils.Trainer.from_args(model, train_loader.dataset.scaler, args)
+    engine = utils.Trainer.from_args(model, train_loader.dataset.scaler, \
+                        train_loader.dataset.scaler_top_k, args)
 
     utils.print_args(args)
 
@@ -70,8 +83,11 @@ def main(args, **model_kwargs):
                 train_loss, train_rse, train_mae, train_mse, train_mape, train_rmse = [], [], [], [], [], []
                 for iter, batch in enumerate(train_loader):
 
-                    x = batch['x']  # [b, seq_x, n, f]
-                    y = batch['y']  # [b, seq_y, n]
+                    # x = batch['x']  # [b, seq_x, n, f]
+                    # y = batch['y']  # [b, seq_y, n]
+
+                    x = batch['x_top_k']
+                    y = batch['y_top_k']
 
                     if y.max() == 0: continue
                     loss, rse, mae, mse, mape, rmse = engine.train(x, y)
@@ -117,9 +133,48 @@ def main(args, **model_kwargs):
     y_gt = y_gt.cpu().data.numpy()
     yhat = yhat.cpu().data.numpy()
 
+
+    print(yhat[0, 0, :])
+    print(y_real[0, 0, :])
+
+def get_psi(args, samples=10000, iterator=100):
+    X = utils.load_raw(args)
+
+    X = X[:samples, :]
+
+    X_temp = np.array([np.max(X[args.seq_len_x + i: \
+        args.seq_len_x + i + args.seq_len_y], axis=0) for i in range(samples - args.seq_len_x - args.seq_len_y)]).T
+
+    size_D = int(math.sqrt(X.shape[1]))
+
+    D = RandomDictionary(size_D, size_D)
+
+    psi, _ = KSVD(D, MatchingPursuit, int(args.random_rate/100 * X.shape[1])).fit(X_temp, iterator)
+
+    return psi
+
+def get_phi(args):
+    X = utils.load_raw(args)
+    phi = np.zeros((int(args.random_rate/100 * X.shape[1]), X.shape[1]))
+
+    for i in range(phi.shape[1]):
+        d = np.random.randint(phi.shape[0])
+        phi[d, i] = 1
+    
+    return phi
+
     # run TE
     if args.run_te:
-        run_te(x_gt, y_gt, yhat, args)
+        psi, S = get_psi(args)
+        phi = get_phi(args)
+
+        A = np.dot(phi, psi)
+        y_cs = np.zeros(y_gt.shape)
+        for i in range(y_gt.shape[0]):
+            S = np.dot(np.dot(A.T, np.dot(A, A.T)), yhat[i].T)
+            y_cs[i] = S.T
+
+        run_te(x_gt, y_gt, y_cs, args)
 
 
 if __name__ == "__main__":

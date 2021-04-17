@@ -1,10 +1,14 @@
 import os
 
-import numpy as np
 import torch
+import numpy as np
+import random as rd
+rd.seed(42)
+
+from .util import largest_indices
+
 from scipy.io import loadmat
 from torch.utils.data import Dataset, DataLoader
-
 
 class MinMaxScaler_torch():
 
@@ -60,11 +64,21 @@ class StandardScaler_torch():
             data = data.reshape(data_size)
 
         return data
+    
+
+def granularity(data, k):
+    if k == 1:
+        return data
+    else:
+        newdata = [np.mean(data[i:i + k], axis=0) for i in range(0, data.shape[0], k)]
+        newdata = np.asarray(newdata)
+        print('new data: ', newdata.shape)
+        return newdata
 
 
-class MissingDataset(Dataset):
+class TrafficDataset(Dataset):
 
-    def __init__(self, X, args, scaler=None):
+    def __init__(self, X, args, scaler=None, scaler_top_k=None, top_k_index=None):
         # save parameters
         self.args = args
 
@@ -72,7 +86,27 @@ class MissingDataset(Dataset):
         self.out_seq_len = args.out_seq_len
         self.trunk = args.trunk
 
+        self.k = args.k  # granularity
+
+        self.oX = np.copy(X)
+        self.oX = self.np2torch(self.oX)
+
+        # get top k biggest
+        if top_k_index is None: 
+            random_time_step = rd.randint(0, len(X))
+            self.top_k_index = largest_indices(X[random_time_step], int(args.random_rate/100 * X.shape[1]))
+            self.top_k_index = np.sort(top_k_index)[0]
+        else: self.top_k_index = top_k_index
+
+        # data train to get psi
+        self.X_top_k = X[:, self.top_k_index]
+
+        # data reconstruction by compressive sensing
+        X_reconstruction = np.zeros(X.shape)
+        X_reconstruction[:, self.top_k_index] = self.X_top_k
+
         self.X = self.np2torch(X)
+        self.X_top_k = self.np2torch(self.X_top_k)
 
         self.n_timeslots, self.n_series = self.X.shape
 
@@ -83,8 +117,15 @@ class MissingDataset(Dataset):
         else:
             self.scaler = scaler
 
+        if scaler_top_k is None:
+            self.scaler_top_k = StandardScaler_torch()
+            self.scaler_top_k.fit(self.X_top_k)
+        else:
+            self.scaler_top_k = scaler_top_k
+
         # transform if needed and convert to torch
         self.X_scaled = self.scaler.transform(self.X)
+        self.X_scaled_top_k = self.scaler_top_k.transform(self.X_top_k)
 
         if args.tod:
             self.tod = self.get_tod()
@@ -128,47 +169,82 @@ class MissingDataset(Dataset):
                 mx[i] = torch.max(self.X_scaled[i - self.args.seq_len_x:i], dim=0)[0]
         return mx
 
+
     def __len__(self):
         return len(self.indices)
 
     def __getitem__(self, idx):
         t = self.indices[idx]
-
+        
         x = self.X_scaled[t:t + self.args.seq_len_x]  # step: t-> t + seq_x
-        xgt = self.X[t:t + self.args.seq_len_x]  # step: t-> t + seq_x
-
-        y = torch.max(self.X[t + self.args.seq_len_x:
-                             t + self.args.seq_len_x + self.args.seq_len_y], dim=0)[0]
-
-        y = y.reshape(1, -1)  # [1, nSeries]
-
-        y_gt = self.X[t + self.args.seq_len_x: t + self.args.seq_len_x + self.args.seq_len_y]
-
+        # xgt = self.X[t:t + self.args.seq_len_x]  # step: t-> t + seq_x
+        xgt = self.oX[t * self.k:(t + self.args.seq_len_x) * self.k]
         x = x.unsqueeze(dim=-1)  # add feature dim [seq_x, n, 1]
 
-        if self.args.tod:
-            tod = self.tod[t:t + self.args.seq_len_x]
-            tod = tod.unsqueeze(dim=-1)  # [seq_x, n, 1]
-            x = torch.cat([x, tod], dim=-1)  # [seq_x, n, +1]
+        # top k
+        x_top_k = self.X_scaled_top_k[t:t + self.args.seq_len_x]  # step: t-> t + seq_x
+        xgt_top_k = self.X_top_k[t:t + self.args.seq_len_x]  # step: t-> t + seq_x
+        x_top_k = x_top_k.unsqueeze(dim=-1)  # add feature dim [seq_x, n, 1]
 
-        if self.args.ma:
-            ma = self.ma[t:t + self.args.seq_len_x]
-            ma = ma.unsqueeze(dim=-1)  # [seq_x, n, 1]
-            x = torch.cat([x, ma], dim=-1)  # [seq_x, n, +1]
+        if self.type == 'p1':
+            y = self.X[t + self.args.seq_len_x: t + self.args.seq_len_x + self.args.seq_len_y]
+        elif self.type == 'p2':
+            y = torch.max(self.X[t + self.args.seq_len_x:
+                                 t + self.args.seq_len_x + self.args.seq_len_y], dim=0)[0]
+            
+            y = y.reshape(1, -1)
 
-        if self.args.mx:
-            mx = self.mx[t:t + self.args.seq_len_x]
-            mx = mx.unsqueeze(dim=-1)  # [seq_x, n, 1]
-            x = torch.cat([x, mx], dim=-1)  # [seq_x, n, +1]
+            # top k
+            y_top_k = torch.max(self.X_top_k[t + self.args.seq_len_x:
+                                 t + self.args.seq_len_x + self.args.seq_len_y], dim=0)[0]
+            
+            y_top_k = y_top_k.reshape(1, -1)
 
-        sample = {'x': x, 'y': y, 'x_gt': xgt, 'y_gt': y_gt}
+            if self.args.tod:
+                tod = self.tod[t:t + self.args.seq_len_x]
+                tod = tod.unsqueeze(dim=-1)  # [seq_x, n, 1]
+                x = torch.cat([x, tod], dim=-1)  # [seq_x, n, +1]
+
+            if self.args.ma:
+                ma = self.ma[t:t + self.args.seq_len_x]
+                ma = ma.unsqueeze(dim=-1)  # [seq_x, n, 1]
+                x = torch.cat([x, ma], dim=-1)  # [seq_x, n, +1]
+
+            if self.args.mx:
+                mx = self.mx[t:t + self.args.seq_len_x]
+                mx = mx.unsqueeze(dim=-1)  # [seq_x, n, 1]
+                x = torch.cat([x, mx], dim=-1)  # [seq_x, n, +1]
+
+        else:
+            t_prime = int(self.args.seq_len_y / self.trunk)
+            y = [torch.max(self.X[t + self.args.seq_len_x + i:
+                                  t + self.args.seq_len_x + i + t_prime], dim=0)[0]
+                 for i in range(0, self.args.seq_len_y, t_prime)]
+
+            y = torch.stack(y, dim=0)
+
+        # ground truth data for doing traffic engineering
+        y_gt = self.oX[(t + self.args.seq_len_x) * self.k:
+                       (t + self.args.seq_len_x + self.args.seq_len_y) * self.k]
+                       
+        y_gt_top_k = self.X_top_k[t + self.args.seq_len_x: t + self.args.seq_len_x + self.args.seq_len_y]
+
+        sample = {'x': x, 'y': y, 'x_gt': xgt, 'y_gt': y_gt, 
+                  'x_top_k': x_top_k, 'y_top_k': y_top_k, 
+                  'x_gt_top_k': xgt_top_k, 'y_gt_top_k': y_gt_top_k}
         return sample
 
+    # def transform(self, X):
+    #     return self.scaler.transform(X)
+
+    # def inverse_transform(self, X):
+    #     return self.scaler.inverse_transform(X)
+
     def transform(self, X):
-        return self.scaler.transform(X)
+        return self.scaler_top_k.transform(X)
 
     def inverse_transform(self, X):
-        return self.scaler.inverse_transform(X)
+        return self.scaler_top_k.inverse_transform(X)
 
     def np2torch(self, X):
         X = torch.Tensor(X)
@@ -216,8 +292,8 @@ def get_dataloader(args):
     # loading data
     X = load_raw(args)
 
-    if X.shape[0] > 10000:
-        _size = 10000
+    if X.shape[0] > 45000:
+        _size = 45000
     else:
         _size = X.shape[0]
 
@@ -225,21 +301,27 @@ def get_dataloader(args):
 
     train, val, test = train_test_split(X)
 
+    random_time_step = rd.randint(0, len(train))
+    # get top k biggest
+
+    top_k_index = largest_indices(train[random_time_step], int(args.random_rate/100 * train.shape[1]))
+    top_k_index = np.sort(top_k_index)[0]
+
     # Training set
-    train_set = MissingDataset(train, args=args, scaler=None)
+    train_set = TrafficDataset(train, args=args, scaler=None, top_k_index=top_k_index)
     train_loader = DataLoader(train_set,
                               batch_size=args.train_batch_size,
                               shuffle=True)
 
     # validation set
-    val_set = MissingDataset(val, args=args, scaler=train_set.scaler)
+    val_set = TrafficDataset(val, args=args, scaler=train_set.scaler, top_k_index=top_k_index)
     val_loader = DataLoader(val_set,
                             batch_size=args.val_batch_size,
                             shuffle=False)
 
-    test_set = MissingDataset(test, args=args, scaler=train_set.scaler)
+    test_set = TrafficDataset(test, args=args, scaler=train_set.scaler, top_k_index=top_k_index)
     test_loader = DataLoader(test_set,
                              batch_size=args.test_batch_size,
                              shuffle=False)
 
-    return train_loader, val_loader, test_loader, None
+    return train_loader, val_loader, test_loader, None, top_k_index

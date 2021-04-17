@@ -106,7 +106,7 @@ class TrafficDataset(Dataset):
         X_reconstruction[:, self.top_k_index] = self.X_top_k
 
         self.X = self.np2torch(X)
-        self.X_top_k = self.np2torch(X_reconstruction)
+        self.X_top_k = self.np2torch(self.X_top_k)
 
         self.n_timeslots, self.n_series = self.X.shape
 
@@ -230,7 +230,8 @@ class TrafficDataset(Dataset):
         y_gt_top_k = self.X_top_k[t + self.args.seq_len_x: t + self.args.seq_len_x + self.args.seq_len_y]
 
         sample = {'x': x, 'y': y, 'x_gt': xgt, 'y_gt': y_gt, 
-                  'x_top_k': x_top_k, 'y_top_k': y_top_k, 'x_gt_top_k': xgt_top_k, 'y_gt_top_k': y_gt_top_k}
+                  'x_top_k': x_top_k, 'y_top_k': y_top_k, 
+                  'x_gt_top_k': xgt_top_k, 'y_gt_top_k': y_gt_top_k}
         return sample
 
     def transform(self, X):
