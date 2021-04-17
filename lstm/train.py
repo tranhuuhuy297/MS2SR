@@ -159,10 +159,6 @@ def main(args, **model_kwargs):
     y_gt = y_gt.cpu().data.numpy()
     yhat = yhat.cpu().data.numpy()
 
-
-    print(yhat[0, 0, :])
-    print(y_real[0, 0, :])
-
     # run TE
     if args.run_te:
         psi, S = get_psi(args)
