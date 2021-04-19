@@ -169,7 +169,8 @@ def main(args, **model_kwargs):
         A = np.dot(phi, psi)
         y_cs = np.zeros(y_gt.shape)
         for i in range(y_gt.shape[0]):
-            S = np.dot(np.dot(A.T, np.dot(A, A.T)), yhat[i].T)
+            temp = np.linalg.inv(np.dot(A, A.T))
+            S = np.dot(np.dot(A.T, temp), yhat[i].T)
             y_cs[i] = np.dot(psi, S).T
 
         run_te(x_gt, y_gt, y_cs, args)
