@@ -163,7 +163,7 @@ def main(args, **model_kwargs):
 
     # run TE
     if args.run_te:
-        psi, S = get_psi(args)
+        psi = get_psi(args)
         phi = get_phi(args)
 
         A = np.dot(phi, psi)
