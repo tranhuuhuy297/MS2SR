@@ -41,7 +41,7 @@ def get_psi(args, samples=10000, iterator=100):
 def get_phi(args):
     X = utils.load_raw(args)
     k_sparse = int(args.random_rate/100 * X.shape[1])
-    phi = np.zeros((k, X.shape[1]))
+    phi = np.zeros((k_sparse, X.shape[1]))
 
     for i in range(phi.shape[1]):
         d = np.random.randint(phi.shape[0] * 2)

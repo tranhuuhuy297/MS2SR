@@ -24,34 +24,6 @@ import cupy as cp
 warnings.simplefilter("ignore")
 warnings.filterwarnings("ignore", category=UserWarning)
 
-def get_psi(args, iterator=100):
-    X = utils.load_raw(args)
-
-<<<<<<< HEAD
-    # X = X[:10100, :]
-
-    X = X[:1100, :]
-
-    # X = cp.asarray(X)   # convert to cal numpy on GPU
-
-    X_temp = np.array([np.max(X[args.seq_len_x + i: args.seq_len_x + i + args.seq_len_y], axis=0) for i in range(1000)]).T
-
-    # X_temp = cp.asarray(X_temp)
-=======
-    X = X[:10000, :]
-
-    X_temp = np.array([np.max(X[args.seq_len_x + i: \
-        args.seq_len_x + i + args.seq_len_y], axis=0) for i in range(10000 - args.seq_len_x - args.seq_len_y)]).T
->>>>>>> huy174
-
-    size_D = int(math.sqrt(X.shape[1]))
-
-    D = RandomDictionary(size_D, size_D)
-
-    psi, _ = KSVD(D, MatchingPursuit, int(args.random_rate/100 * X.shape[1])).fit(X_temp, iterator)
-
-    return psi
-
 def main(args, **model_kwargs):
     device = torch.device(args.device)
     args.device = device
