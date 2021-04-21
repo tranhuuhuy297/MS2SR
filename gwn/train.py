@@ -24,6 +24,46 @@ import cupy as cp
 warnings.simplefilter("ignore")
 warnings.filterwarnings("ignore", category=UserWarning)
 
+def get_psi(args, samples=10000, iterator=100):
+    X = utils.load_raw(args)
+
+    X = X[:samples, :]
+
+    X_temp = np.array([np.max(X[args.seq_len_x + i: \
+        args.seq_len_x + i + args.seq_len_y], axis=0) for i in range(samples - args.seq_len_x - args.seq_len_y)]).T
+
+    size_D = int(math.sqrt(X.shape[1]))
+
+    D = RandomDictionary(size_D, size_D)
+
+    psi, _ = KSVD(D, MatchingPursuit, int(args.random_rate/100 * X.shape[1])).fit(X_temp, iterator)
+
+    return psi
+
+def get_G(args):
+    X = utils.load_raw(args)
+    k_sparse = int(args.random_rate/100 * X.shape[1])
+    G = np.zeros((k_sparse, X.shape[1]))
+
+    for i in range(G.shape[1]):
+        d = np.random.randint(G.shape[0] * 2)
+        if d < k_sparse: G[d, i] = 1
+        else: continue
+    
+    return G
+
+def get_R(args):
+    X = utils.load_raw(args)
+    k_sparse = int(args.random_rate/100 * X.shape[1])
+    R = np.zeros((k_sparse, X.shape[1]))
+
+    for i in range(R.shape[1]):
+        d = np.random.randint(R.shape[0] * 2)
+        if d < k_sparse: R[d, i] = 1
+        else: continue
+    
+    return R
+
 def main(args, **model_kwargs):
     device = torch.device(args.device)
     args.device = device
@@ -64,7 +104,8 @@ def main(args, **model_kwargs):
     model.to(device)
     logger = utils.Logger(args)
 
-    engine = utils.Trainer.from_args(model, train_loader.dataset.scaler, args)
+    engine = utils.Trainer.from_args(model, train_loader.dataset.scaler, \
+                        train_loader.dataset.scaler_top_k, args)
 
     utils.print_args(args)
 
@@ -134,31 +175,29 @@ def main(args, **model_kwargs):
 
     # run TE
     if args.run_te:
-        x_gt = x_gt.cpu().data.numpy()  # [timestep, seq_x, seq_y]
-        y_gt = y_gt.cpu().data.numpy()
-        yhat = yhat.cpu().data.numpy()
+        psi = get_psi(args)
+        G = get_G(args)
+        R = get_R(args)
 
-        print(ygt[0, 0, :])
+        A = np.dot(R*G, psi)
+        y_cs = np.zeros(y_gt.shape)
 
-        # get psi
-        # psi = get_psi(args)
+        # for i in range(y_gt.shape[0]):
+        #     temp = np.linalg.inv(np.dot(A, A.T))
+        #     S = np.dot(np.dot(A.T, temp), yhat[i].T)
+        #     y_cs[i] = np.dot(psi, S).T
 
-        # yhat: (test_size - seq_x - seq_y, 1, number flows - 144)
-        # ygt:  (test_size - seq_x - seq_y, seq_y, number flows - 144)
+        for i in range(y_gt.shape[0]):
+            m = A.shape[1]
+            S = cvx.Variable(m)
+            objective = cvx.Minimize(cvx.norm(S, p=0))
+            constraint = [yhat[i].T == A*S]
 
-        # get yhat_X = psi * yhat_S
-        # yhat_S = np.zeros(y_gt.shape)
-        # yhat_S[:, top_k_index] = yhat
+            prob = cvx.Problem(objective, constraint)
+            prob.solve()
 
-        # yhat_S = yhat
-        # yhat_X = np.zeros(yhat_S.shape)
-        # for i in range(yhat_X.shape[0]):
-        #     yhat_X[i] = np.dot(psi.matrix, yhat_S[i].T).T
-
-        # # yhat_X = yhat_X.T
-
-        # # run te
-        # run_te(x_gt, y_gt, yhat_X, args)
+            y_cs[i] = S.value.reshape(1, m)
+        run_te(x_gt, y_gt, y_cs, args)
 
 
 if __name__ == "__main__":
