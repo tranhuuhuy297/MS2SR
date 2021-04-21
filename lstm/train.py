@@ -17,6 +17,8 @@ from pursuit import MatchingPursuit
 
 import warnings
 
+import cvxpy as cvx
+
 # ssh aiotlab@202.191.57.61 -p 1111
 
 warnings.simplefilter("ignore")
@@ -38,17 +40,29 @@ def get_psi(args, samples=10000, iterator=100):
 
     return psi
 
-def get_phi(args):
+def get_G(args):
     X = utils.load_raw(args)
     k_sparse = int(args.random_rate/100 * X.shape[1])
-    phi = np.zeros((k_sparse, X.shape[1]))
+    G = np.zeros((k_sparse, X.shape[1]))
 
-    for i in range(phi.shape[1]):
-        d = np.random.randint(phi.shape[0] * 2)
-        if d < k_sparse: phi[d, i] = 1
+    for i in range(G.shape[1]):
+        d = np.random.randint(G.shape[0] * 2)
+        if d < k_sparse: G[d, i] = 1
         else: continue
     
-    return phi
+    return G
+
+def get_R(args):
+    X = utils.load_raw(args)
+    k_sparse = int(args.random_rate/100 * X.shape[1])
+    R = np.zeros((k_sparse, X.shape[1]))
+
+    for i in range(R.shape[1]):
+        d = np.random.randint(R.shape[0] * 2)
+        if d < k_sparse: R[d, i] = 1
+        else: continue
+    
+    return R
 
 
 def main(args, **model_kwargs):
@@ -164,15 +178,27 @@ def main(args, **model_kwargs):
     # run TE
     if args.run_te:
         psi = get_psi(args)
-        phi = get_phi(args)
+        G = get_G(args)
+        R = get_R(args)
 
-        A = np.dot(phi, psi)
+        A = np.dot(R*G, psi)
         y_cs = np.zeros(y_gt.shape)
-        for i in range(y_gt.shape[0]):
-            temp = np.linalg.inv(np.dot(A, A.T))
-            S = np.dot(np.dot(A.T, temp), yhat[i].T)
-            y_cs[i] = np.dot(psi, S).T
 
+        # for i in range(y_gt.shape[0]):
+        #     temp = np.linalg.inv(np.dot(A, A.T))
+        #     S = np.dot(np.dot(A.T, temp), yhat[i].T)
+        #     y_cs[i] = np.dot(psi, S).T
+
+        for i in range(y_gt.shape[0]):
+            m = A.shape[1]
+            S = cvx.Variable(m)
+            objective = cvx.Minimize(cvx.norm(S, p=0))
+            constraint = [yhat[i].T == A*S]
+
+            prob = cvx.Problem(objective, constraint)
+            prob.solve()
+
+            y_cs[i] = S.value.reshape(1, m)
         run_te(x_gt, y_gt, y_cs, args)
 
 

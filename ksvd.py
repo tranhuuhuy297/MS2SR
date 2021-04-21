@@ -45,7 +45,6 @@ class KSVD:
             U, s, Vh = np.linalg.svd(Ri)
             D[:, k] = U[:, 0]
             self.alphas[k, wk] = s[0] * Vh[0, :]
-            self.alphas[k, wk] = (self.alphas[k, wk] + np.abs(self.alphas[k, wk])) / 2
             R[:, wk] = Ri - D[:, k, None].dot(self.alphas[None, k, wk])
         self.dictionary = Dictionary(D)
 
