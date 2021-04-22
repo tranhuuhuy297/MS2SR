@@ -23,45 +23,54 @@ import cvxpy as cvx
 warnings.simplefilter("ignore")
 warnings.filterwarnings("ignore", category=UserWarning)
 
+
 def get_psi(args, samples=10000, iterator=100):
     X = utils.load_raw(args)
 
     X = X[:samples, :]
 
     X_temp = np.array([np.max(X[args.seq_len_x + i: \
-        args.seq_len_x + i + args.seq_len_y], axis=0) for i in range(samples - args.seq_len_x - args.seq_len_y)]).T
+                                args.seq_len_x + i + args.seq_len_y], axis=0) for i in
+                       range(samples - args.seq_len_x - args.seq_len_y)]).T
 
     size_D = int(math.sqrt(X.shape[1]))
 
     D = RandomDictionary(size_D, size_D)
 
-    psi, _ = KSVD(D, MatchingPursuit, int(args.random_rate/100 * X.shape[1])).fit(X_temp, iterator)
+    psi, _ = KSVD(D, MatchingPursuit, int(args.random_rate / 100 * X.shape[1])).fit(X_temp, iterator)
 
     return psi
 
+
 def get_G(args):
     X = utils.load_raw(args)
-    k_sparse = int(args.random_rate/100 * X.shape[1])
+    k_sparse = int(args.random_rate / 100 * X.shape[1])
     G = np.zeros((k_sparse, X.shape[1]))
 
     for i in range(G.shape[1]):
         d = np.random.randint(G.shape[0] * 2)
-        if d < k_sparse: G[d, i] = 1
-        else: continue
-    
+        if d < k_sparse:
+            G[d, i] = 1
+        else:
+            continue
+
     return G
+
 
 def get_R(args):
     X = utils.load_raw(args)
-    k_sparse = int(args.random_rate/100 * X.shape[1])
+    k_sparse = int(args.random_rate / 100 * X.shape[1])
     R = np.zeros((k_sparse, X.shape[1]))
 
     for i in range(R.shape[1]):
         d = np.random.randint(R.shape[0] * 2)
-        if d < k_sparse: R[d, i] = 1
-        else: continue
-    
+        if d < k_sparse:
+            R[d, i] = 1
+        else:
+            continue
+
     return R
+
 
 def main(args, **model_kwargs):
     device = torch.device(args.device)
@@ -83,9 +92,9 @@ def main(args, **model_kwargs):
 
     train_loader, val_loader, test_loader, graphs, top_k_index = utils.get_dataloader(args)
 
-    args.train_size, args.nSeries = train_loader.dataset.X.shape
-    args.val_size = val_loader.dataset.X.shape[0]
-    args.test_size = test_loader.dataset.X.shape[0]
+    args.train_size, args.nSeries = train_loader.dataset.X_scaled_top_k.shape
+    args.val_size = val_loader.dataset.X_scaled_top_k.shape[0]
+    args.test_size = test_loader.dataset.X_scaled_top_k.shape[0]
 
     in_dim = 1
     if args.tod:
@@ -177,7 +186,7 @@ def main(args, **model_kwargs):
         G = get_G(args)
         R = get_R(args)
 
-        A = np.dot(R*G, psi)
+        A = np.dot(R * G, psi)
         y_cs = np.zeros(y_gt.shape)
 
         # for i in range(y_gt.shape[0]):
@@ -189,7 +198,7 @@ def main(args, **model_kwargs):
             m = A.shape[1]
             S = cvx.Variable(m)
             objective = cvx.Minimize(cvx.norm(S, p=0))
-            constraint = [yhat[i].T == A*S]
+            constraint = [yhat[i].T == A * S]
 
             prob = cvx.Problem(objective, constraint)
             prob.solve()

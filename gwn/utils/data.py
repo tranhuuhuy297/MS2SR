@@ -1,14 +1,16 @@
 import os
-
-import torch
-import numpy as np
 import random as rd
+
+import numpy as np
+import torch
+
 rd.seed(42)
 
 from .util import largest_indices
 
 from scipy.io import loadmat
 from torch.utils.data import Dataset, DataLoader
+
 
 class MinMaxScaler_torch():
 
@@ -92,11 +94,12 @@ class TrafficDataset(Dataset):
         self.oX = self.np2torch(self.oX)
 
         # get top k biggest
-        if top_k_index is None: 
+        if top_k_index is None:
             random_time_step = rd.randint(0, len(X))
-            self.top_k_index = largest_indices(X[random_time_step], int(args.random_rate/100 * X.shape[1]))
+            self.top_k_index = largest_indices(X[random_time_step], int(args.random_rate / 100 * X.shape[1]))
             self.top_k_index = np.sort(top_k_index)[0]
-        else: self.top_k_index = top_k_index
+        else:
+            self.top_k_index = top_k_index
 
         # data train to get psi
         self.X_top_k = X[:, self.top_k_index]
@@ -168,7 +171,6 @@ class TrafficDataset(Dataset):
             else:
                 mx[i] = torch.max(self.X_scaled[i - self.args.seq_len_x:i], dim=0)[0]
         return mx
-
 
     def __len__(self):
         return len(self.indices)
