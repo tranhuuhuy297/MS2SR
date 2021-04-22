@@ -1,4 +1,3 @@
-import os
 import sys
 
 sys.path.append('..')
@@ -17,7 +16,7 @@ from pursuit import MatchingPursuit
 
 import warnings
 
-import cupy as cp
+import cvxpy as cvx
 
 # ssh aiotlab@202.191.57.61 -p 1111
 
