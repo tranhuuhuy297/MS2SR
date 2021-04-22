@@ -45,8 +45,8 @@ def get_args():
 
     parser.add_argument('--dilation_channels', type=int, default=32, help='inputs dimension (default 32)')
     parser.add_argument('--residual_channels', type=int, default=32, help='inputs dimension')
-    parser.add_argument('--skip_channels', type=int, default=256, help='inputs dimension')
-    parser.add_argument('--end_channels', type=int, default=512, help='inputs dimension')
+    parser.add_argument('--skip_channels', type=int, default=64, help='inputs dimension')
+    parser.add_argument('--end_channels', type=int, default=128, help='inputs dimension')
 
     parser.add_argument('--blocks', type=int, default=5, help='')
     parser.add_argument('--layers', type=int, default=2, help='')

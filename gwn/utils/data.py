@@ -96,7 +96,7 @@ class TrafficDataset(Dataset):
         self.top_k_index = top_k_index
 
         # data train to get psi
-        self.X_top_k = X[:, self.top_k_index]
+        self.X_top_k = np.copy(X[:, self.top_k_index])
 
         # data reconstruction by compressive sensing
         X_reconstruction = np.zeros(X.shape)
@@ -171,7 +171,7 @@ class TrafficDataset(Dataset):
 
     def __getitem__(self, idx):
         t = self.indices[idx]
-        
+
         x = self.X_scaled[t:t + self.args.seq_len_x]  # step: t-> t + seq_x
         # xgt = self.X[t:t + self.args.seq_len_x]  # step: t-> t + seq_x
         xgt = self.oX[t * self.k:(t + self.args.seq_len_x) * self.k]
@@ -182,51 +182,40 @@ class TrafficDataset(Dataset):
         xgt_top_k = self.X_top_k[t:t + self.args.seq_len_x]  # step: t-> t + seq_x
         x_top_k = x_top_k.unsqueeze(dim=-1)  # add feature dim [seq_x, n, 1]
 
-        if self.type == 'p1':
-            y = self.X[t + self.args.seq_len_x: t + self.args.seq_len_x + self.args.seq_len_y]
-        elif self.type == 'p2':
-            y = torch.max(self.X[t + self.args.seq_len_x:
-                                 t + self.args.seq_len_x + self.args.seq_len_y], dim=0)[0]
-            
-            y = y.reshape(1, -1)
+        y = torch.max(self.X[t + self.args.seq_len_x:
+                             t + self.args.seq_len_x + self.args.seq_len_y], dim=0)[0]
 
-            # top k
-            y_top_k = torch.max(self.X_top_k[t + self.args.seq_len_x:
-                                 t + self.args.seq_len_x + self.args.seq_len_y], dim=0)[0]
-            
-            y_top_k = y_top_k.reshape(1, -1)
+        y = y.reshape(1, -1)
 
-            if self.args.tod:
-                tod = self.tod[t:t + self.args.seq_len_x]
-                tod = tod.unsqueeze(dim=-1)  # [seq_x, n, 1]
-                x = torch.cat([x, tod], dim=-1)  # [seq_x, n, +1]
+        # top k
+        y_top_k = torch.max(self.X_top_k[t + self.args.seq_len_x:
+                                         t + self.args.seq_len_x + self.args.seq_len_y], dim=0)[0]
 
-            if self.args.ma:
-                ma = self.ma[t:t + self.args.seq_len_x]
-                ma = ma.unsqueeze(dim=-1)  # [seq_x, n, 1]
-                x = torch.cat([x, ma], dim=-1)  # [seq_x, n, +1]
+        y_top_k = y_top_k.reshape(1, -1)
 
-            if self.args.mx:
-                mx = self.mx[t:t + self.args.seq_len_x]
-                mx = mx.unsqueeze(dim=-1)  # [seq_x, n, 1]
-                x = torch.cat([x, mx], dim=-1)  # [seq_x, n, +1]
+        if self.args.tod:
+            tod = self.tod[t:t + self.args.seq_len_x]
+            tod = tod.unsqueeze(dim=-1)  # [seq_x, n, 1]
+            x = torch.cat([x, tod], dim=-1)  # [seq_x, n, +1]
 
-        else:
-            t_prime = int(self.args.seq_len_y / self.trunk)
-            y = [torch.max(self.X[t + self.args.seq_len_x + i:
-                                  t + self.args.seq_len_x + i + t_prime], dim=0)[0]
-                 for i in range(0, self.args.seq_len_y, t_prime)]
+        if self.args.ma:
+            ma = self.ma[t:t + self.args.seq_len_x]
+            ma = ma.unsqueeze(dim=-1)  # [seq_x, n, 1]
+            x = torch.cat([x, ma], dim=-1)  # [seq_x, n, +1]
 
-            y = torch.stack(y, dim=0)
+        if self.args.mx:
+            mx = self.mx[t:t + self.args.seq_len_x]
+            mx = mx.unsqueeze(dim=-1)  # [seq_x, n, 1]
+            x = torch.cat([x, mx], dim=-1)  # [seq_x, n, +1]
 
         # ground truth data for doing traffic engineering
         y_gt = self.oX[(t + self.args.seq_len_x) * self.k:
                        (t + self.args.seq_len_x + self.args.seq_len_y) * self.k]
-                       
+
         y_gt_top_k = self.X_top_k[t + self.args.seq_len_x: t + self.args.seq_len_x + self.args.seq_len_y]
 
-        sample = {'x': x, 'y': y, 'x_gt': xgt, 'y_gt': y_gt, 
-                  'x_top_k': x_top_k, 'y_top_k': y_top_k, 
+        sample = {'x': x, 'y': y, 'x_gt': xgt, 'y_gt': y_gt,
+                  'x_top_k': x_top_k, 'y_top_k': y_top_k,
                   'x_gt_top_k': xgt_top_k, 'y_gt_top_k': y_gt_top_k}
         return sample
 
