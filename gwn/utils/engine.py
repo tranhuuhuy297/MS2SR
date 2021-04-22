@@ -27,7 +27,7 @@ class Trainer():
             raise ValueError('Loss fn not found!')
 
     @classmethod
-    def from_args(cls, model, scaler, args):
+    def from_args(cls, model, scaler, scaler_top_k, args):
         return cls(model, scaler, scaler_top_k, args.learning_rate, args.weight_decay, clip=args.clip,
                    lr_decay_rate=args.lr_decay_rate, lossfn=args.loss_fn)
 
