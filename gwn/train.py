@@ -181,29 +181,37 @@ def main(args, **model_kwargs):
         logger.plot(x_gt, y_real, yhat)
 
     # run TE
+    psi = get_psi(args)
+    G = get_G(args)
+    R = get_R(args)
+
+    A = np.dot(R * G, psi)
+    y_cs = np.zeros(y_gt.shape)
+
+    # for i in range(y_gt.shape[0]):
+    #     temp = np.linalg.inv(np.dot(A, A.T))
+    #     S = np.dot(np.dot(A.T, temp), yhat[i].T)
+    #     y_cs[i] = np.dot(psi, S).T
+
+    for i in range(y_gt.shape[0]):
+        m = A.shape[1]
+        S = cvx.Variable(m)
+        objective = cvx.Minimize(cvx.norm(S, p=0))
+        constraint = [yhat[i].T == A * S]
+
+        prob = cvx.Problem(objective, constraint)
+        prob.solve()
+
+        y_cs[i] = S.value.reshape(1, m)
+
+        for i in range(yhat.shape):
+            pred = yhat[:, i, :]
+            pred = torch.clamp(pred, min=0., max=10e10)
+            real = y_real[:, i, :]
+            test_met.append([x.item() for x in calc_metrics(pred, real)])
+        test_met_df = pd.DataFrame(test_met, columns=['rse', 'mae', 'mse', 'mape', 'rmse']).rename_axis('t')
+
     if args.run_te:
-        psi = get_psi(args)
-        G = get_G(args)
-        R = get_R(args)
-
-        A = np.dot(R * G, psi)
-        y_cs = np.zeros(y_gt.shape)
-
-        # for i in range(y_gt.shape[0]):
-        #     temp = np.linalg.inv(np.dot(A, A.T))
-        #     S = np.dot(np.dot(A.T, temp), yhat[i].T)
-        #     y_cs[i] = np.dot(psi, S).T
-
-        for i in range(y_gt.shape[0]):
-            m = A.shape[1]
-            S = cvx.Variable(m)
-            objective = cvx.Minimize(cvx.norm(S, p=0))
-            constraint = [yhat[i].T == A * S]
-
-            prob = cvx.Problem(objective, constraint)
-            prob.solve()
-
-            y_cs[i] = S.value.reshape(1, m)
         run_te(x_gt, y_gt, y_cs, args)
 
 
