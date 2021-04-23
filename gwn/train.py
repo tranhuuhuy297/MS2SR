@@ -13,7 +13,7 @@ from utils import *
 from dictionary import RandomDictionary
 from ksvd import KSVD
 from pursuit import MatchingPursuit
-
+import pickle
 import warnings
 
 import cvxpy as cvx
@@ -38,11 +38,11 @@ def get_psi(args, samples=10000, iterator=100):
     D = RandomDictionary(size_D, size_D)
 
     psi, _ = KSVD(D, MatchingPursuit, int(args.random_rate / 100 * X.shape[1])).fit(X_temp, iterator)
-
     return psi
 
 
 def get_G(args):
+
     X = utils.load_raw(args)
     k_sparse = int(args.random_rate / 100 * X.shape[1])
     G = np.zeros((k_sparse, X.shape[1]))
@@ -181,9 +181,25 @@ def main(args, **model_kwargs):
         logger.plot(x_gt, y_real, yhat)
 
     # run TE
-    psi = get_psi(args)
-    G = get_G(args)
-    R = get_R(args)
+    path_psi_G_R = os.path.join(logger.log_dir, '{}_psi_G_R.pkl'.format(args.dataset))
+    if not os.path.isfile(path_psi_G_R):
+
+        psi = get_psi(args)
+        G = get_G(args)
+        R = get_R(args)
+        obj = {
+            'psi': psi,
+            'G': G,
+            'R': R
+        }
+        with open(path_psi_G_R, 'wb') as fp:
+            pickle.dump(obj, fp, protocol=pickle.HIGHEST_PROTOCOL)
+    else:
+        with open(path_psi_G_R, 'rb') as fp:
+            obj = pickle.load(fp)
+        psi = obj['psi']
+        G = obj['G']
+        R = obj['R']
 
     A = np.dot(R * G, psi)
     ygt_shape = y_gt.shape
