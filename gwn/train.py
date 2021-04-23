@@ -9,7 +9,7 @@ import torch
 import utils
 from tqdm import trange
 from routing import *
-
+from utils import *
 from dictionary import RandomDictionary
 from ksvd import KSVD
 from pursuit import MatchingPursuit
@@ -186,7 +186,8 @@ def main(args, **model_kwargs):
     R = get_R(args)
 
     A = np.dot(R * G, psi)
-    y_cs = np.zeros(y_gt.shape)
+    ygt_shape = y_gt.shape
+    y_cs = np.zeros(shape=(ygt_shape[0], 1, ygt_shape[-1]))
 
     # for i in range(y_gt.shape[0]):
     #     temp = np.linalg.inv(np.dot(A, A.T))
@@ -204,12 +205,16 @@ def main(args, **model_kwargs):
 
         y_cs[i] = S.value.reshape(1, m)
 
-        for i in range(yhat.shape):
-            pred = yhat[:, i, :]
-            pred = torch.clamp(pred, min=0., max=10e10)
-            real = y_real[:, i, :]
-            test_met.append([x.item() for x in calc_metrics(pred, real)])
-        test_met_df = pd.DataFrame(test_met, columns=['rse', 'mae', 'mse', 'mape', 'rmse']).rename_axis('t')
+    test_met = []
+    for i in range(y_cs.shape[1]):
+        pred = y_cs[:, i, :]
+        pred = torch.clamp(pred, min=0., max=10e10)
+        real = y_real[:, i, :]
+        test_met.append([x.item() for x in calc_metrics(pred, real)])
+    test_met_df = pd.DataFrame(test_met, columns=['rse', 'mae', 'mse', 'mape', 'rmse']).rename_axis('t')
+    test_met_df.round(6).to_csv(os.path.join(logger.log_dir, 'test_metrics.csv'))
+    print('Prediction Accuracy:')
+    print(utils.summary(logger.log_dir))
 
     if args.run_te:
         run_te(x_gt, y_gt, y_cs, args)
