@@ -223,7 +223,8 @@ def main(args, **model_kwargs):
         prob = cvx.Problem(objective, constraint)
         prob.solve()
 
-        y_cs[i] = np.dot(psi.matrix, S.value.reshape(m, 1)).reshape(1, m)
+        y_cs[i] = np.dot(psi.matrix, S.value.reshape(m, 1))
+        y_cs[i] = y_cs[i].reshape(1, m)
 
     x_gt = torch.from_numpy(x_gt)
     y_gt = torch.from_numpy(y_gt)
