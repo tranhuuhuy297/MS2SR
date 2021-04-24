@@ -184,69 +184,71 @@ def main(args, **model_kwargs):
     y_gt = y_gt.cpu().data.numpy()
     yhat = yhat.cpu().data.numpy()
 
-    # run TE
-    path_psi_G_R = os.path.join(logger.log_dir, '{}_psi_G_R.pkl'.format(args.dataset))
-    if not os.path.isfile(path_psi_G_R):
+    print(y_gt.shape)
 
-        psi = get_psi(args)
-        G = get_G(args)
-        R = get_R(args)
-        obj = {
-            'psi': psi,
-            'G': G,
-            'R': R
-        }
-        with open(path_psi_G_R, 'wb') as fp:
-            pickle.dump(obj, fp, protocol=pickle.HIGHEST_PROTOCOL)
-    else:
-        with open(path_psi_G_R, 'rb') as fp:
-            obj = pickle.load(fp)
-        psi = obj['psi']
-        G = obj['G']
-        R = obj['R']
+    # # run TE
+    # path_psi_G_R = os.path.join(logger.log_dir, '{}_psi_G_R.pkl'.format(args.dataset))
+    # if not os.path.isfile(path_psi_G_R):
 
-    A = np.dot(R * G, psi.matrix)
-    ygt_shape = y_gt.shape
-    y_cs = np.zeros(shape=(ygt_shape[0], 1, ygt_shape[-1]))
+    #     psi = get_psi(args)
+    #     G = get_G(args)
+    #     R = get_R(args)
+    #     obj = {
+    #         'psi': psi,
+    #         'G': G,
+    #         'R': R
+    #     }
+    #     with open(path_psi_G_R, 'wb') as fp:
+    #         pickle.dump(obj, fp, protocol=pickle.HIGHEST_PROTOCOL)
+    # else:
+    #     with open(path_psi_G_R, 'rb') as fp:
+    #         obj = pickle.load(fp)
+    #     psi = obj['psi']
+    #     G = obj['G']
+    #     R = obj['R']
+
+    # A = np.dot(R * G, psi.matrix)
+    # ygt_shape = y_gt.shape
+    # y_cs = np.zeros(shape=(ygt_shape[0], 1, ygt_shape[-1]))
+
+    # # for i in range(y_gt.shape[0]):
+    # #     temp = np.linalg.inv(np.dot(A, A.T))
+    # #     S = np.dot(np.dot(A.T, temp), yhat[i].T)
+    # #     y_cs[i] = np.dot(psi, S).T
 
     # for i in range(y_gt.shape[0]):
-    #     temp = np.linalg.inv(np.dot(A, A.T))
-    #     S = np.dot(np.dot(A.T, temp), yhat[i].T)
-    #     y_cs[i] = np.dot(psi, S).T
+    #     m = A.shape[1]
+    #     S = cvx.Variable(m)
+    #     objective = cvx.Minimize(cvx.norm(S, p=1))
+    #     constraint = [yhat[i].reshape(-1, ) == A * S]
 
-    for i in range(y_gt.shape[0]):
-        m = A.shape[1]
-        S = cvx.Variable(m)
-        objective = cvx.Minimize(cvx.norm(S, p=1))
-        constraint = [yhat[i].reshape(-1, ) == A * S]
+    #     prob = cvx.Problem(objective, constraint)
+    #     prob.solve()
 
-        prob = cvx.Problem(objective, constraint)
-        prob.solve()
+    #     y_cs[i] = np.dot(psi.matrix, S.value.reshape(m, 1))
+    #     y_cs[i] = y_cs[i].reshape(1, m)
 
-        y_cs[i] = np.dot(psi.matrix, S.value.reshape(m, 1))
-        y_cs[i] = y_cs[i].reshape(1, m)
+    # x_gt = torch.from_numpy(x_gt)
+    # y_gt = torch.from_numpy(y_gt)
+    # yhat = torch.from_numpy(yhat)
 
-    x_gt = torch.from_numpy(x_gt)
-    y_gt = torch.from_numpy(y_gt)
-    yhat = torch.from_numpy(yhat)
+    # test_met = []
+    # for i in range(y_cs.shape[1]):
+    #     pred = y_cs[:, i, :]
+    #     pred = torch.clamp(pred, min=0., max=10e10)
+    #     real = y_real[:, i, :]
+    #     test_met.append([x.item() for x in calc_metrics(pred, real)])
+    # test_met_df = pd.DataFrame(test_met, columns=['rse', 'mae', 'mse', 'mape', 'rmse']).rename_axis('t')
+    # test_met_df.round(6).to_csv(os.path.join(logger.log_dir, 'test_metrics.csv'))
+    # print('Prediction Accuracy:')
+    # print(utils.summary(logger.log_dir))
 
-    test_met = []
-    for i in range(y_cs.shape[1]):
-        pred = y_cs[:, i, :]
-        pred = torch.clamp(pred, min=0., max=10e10)
-        real = y_real[:, i, :]
-        test_met.append([x.item() for x in calc_metrics(pred, real)])
-    test_met_df = pd.DataFrame(test_met, columns=['rse', 'mae', 'mse', 'mape', 'rmse']).rename_axis('t')
-    test_met_df.round(6).to_csv(os.path.join(logger.log_dir, 'test_metrics.csv'))
-    print('Prediction Accuracy:')
-    print(utils.summary(logger.log_dir))
+    # if args.run_te:
+    #     x_gt = x_gt.cpu().data.numpy()  # [timestep, seq_x, seq_y]
+    #     y_gt = y_gt.cpu().data.numpy()
+    #     yhat = yhat.cpu().data.numpy()
 
-    if args.run_te:
-        x_gt = x_gt.cpu().data.numpy()  # [timestep, seq_x, seq_y]
-        y_gt = y_gt.cpu().data.numpy()
-        yhat = yhat.cpu().data.numpy()
-
-        run_te(x_gt, y_gt, y_cs, args)
+    #     run_te(x_gt, y_gt, y_cs, args)
 
 
 if __name__ == "__main__":

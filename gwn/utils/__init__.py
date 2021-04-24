@@ -6,4 +6,4 @@ from .logger import Logger
 from .metric import calc_metrics
 from .parameter import get_args, print_args
 # from .result_visualization import plot_results
-from .util import make_graph_inputs
+from .util import make_graph_inputs, largest_indices
