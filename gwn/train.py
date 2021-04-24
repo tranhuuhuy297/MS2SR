@@ -218,17 +218,17 @@ def main(args, **model_kwargs):
         m = A.shape[1]
         S = cvx.Variable(m)
         objective = cvx.Minimize(cvx.norm(S, p=1))
-        constraint = [yhat[i].reshape(-1, ) == A * S]
+        constraint = [yhat[i].reshape(-1, ) >= A * S]
 
         prob = cvx.Problem(objective, constraint)
         prob.solve()
+        
+        y_cs[i] = np.dot(psi.matrix, S.value.reshape(m, 1)).T
 
-        y_cs[i] = np.dot(psi.matrix, S.value.reshape(m, 1))
-        y_cs[i] = y_cs[i].reshape(1, m)
-
-    x_gt = torch.from_numpy(x_gt)
-    y_gt = torch.from_numpy(y_gt)
-    yhat = torch.from_numpy(yhat)
+    x_gt = torch.from_numpy(x_gt).to(args.device)
+    y_gt = torch.from_numpy(y_gt).to(args.device)
+    yhat = torch.from_numpy(yhat).to(args.device)
+    y_cs = torch.from_numpy(y_cs).to(args.device)
 
     test_met = []
     for i in range(y_cs.shape[1]):
@@ -245,7 +245,8 @@ def main(args, **model_kwargs):
         x_gt = x_gt.cpu().data.numpy()  # [timestep, seq_x, seq_y]
         y_gt = y_gt.cpu().data.numpy()
         yhat = yhat.cpu().data.numpy()
-
+        y_cs = y_cs.cpu().data.numpy()
+    
         run_te(x_gt, y_gt, y_cs, args)
 
 
