@@ -38,7 +38,7 @@ def get_psi(args, samples=10000, iterator=100):
     D = RandomDictionary(size_D, size_D)
 
     psi, _ = KSVD(D, MatchingPursuit, int(args.random_rate / 100 * X.shape[1])).fit(X_temp, iterator)
-    return psi.matrix
+    return psi
 
 
 def get_G(args):
@@ -201,7 +201,7 @@ def main(args, **model_kwargs):
         G = obj['G']
         R = obj['R']
 
-    A = np.dot(R * G, psi)
+    A = np.dot(R * G, psi.matrix)
     ygt_shape = y_gt.shape
     y_cs = np.zeros(shape=(ygt_shape[0], 1, ygt_shape[-1]))
 
@@ -219,7 +219,7 @@ def main(args, **model_kwargs):
         prob = cvx.Problem(objective, constraint)
         prob.solve()
 
-        y_cs[i] = S.value.reshape(1, m)
+        y_cs[i] = np.dot(psi.matrix, S.value.reshape(m, 1)).reshape(1, m)
 
     test_met = []
     for i in range(y_cs.shape[1]):
