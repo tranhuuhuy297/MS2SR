@@ -24,7 +24,7 @@ warnings.simplefilter("ignore")
 warnings.filterwarnings("ignore", category=UserWarning)
 
 
-def get_psi(args, samples=10000, iterator=100):
+def get_psi(args, samples=10000, iterator=1):
     X = utils.load_raw(args)
 
     X = X[:samples, :]
@@ -213,7 +213,7 @@ def main(args, **model_kwargs):
     for i in range(y_gt.shape[0]):
         m = A.shape[1]
         S = cvx.Variable(m)
-        objective = cvx.Minimize(cvx.norm(S, p=0))
+        objective = cvx.Minimize(cvx.norm(S, p=1))
         constraint = [yhat[i].T == A * S]
 
         prob = cvx.Problem(objective, constraint)
