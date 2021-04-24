@@ -180,6 +180,10 @@ def main(args, **model_kwargs):
     if args.plot:
         logger.plot(x_gt, y_real, yhat)
 
+    x_gt = x_gt.cpu().data.numpy()  # [timestep, seq_x, seq_y]
+    y_gt = y_gt.cpu().data.numpy()
+    yhat = yhat.cpu().data.numpy()
+
     # run TE
     path_psi_G_R = os.path.join(logger.log_dir, '{}_psi_G_R.pkl'.format(args.dataset))
     if not os.path.isfile(path_psi_G_R):
@@ -221,6 +225,10 @@ def main(args, **model_kwargs):
 
         y_cs[i] = np.dot(psi.matrix, S.value.reshape(m, 1)).reshape(1, m)
 
+    x_gt = torch.from_numpy(x_gt)
+    y_gt = torch.from_numpy(y_gt)
+    yhat = torch.from_numpy(yhat)
+
     test_met = []
     for i in range(y_cs.shape[1]):
         pred = y_cs[:, i, :]
@@ -233,6 +241,10 @@ def main(args, **model_kwargs):
     print(utils.summary(logger.log_dir))
 
     if args.run_te:
+        x_gt = x_gt.cpu().data.numpy()  # [timestep, seq_x, seq_y]
+        y_gt = y_gt.cpu().data.numpy()
+        yhat = yhat.cpu().data.numpy()
+
         run_te(x_gt, y_gt, y_cs, args)
 
 
