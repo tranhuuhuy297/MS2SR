@@ -218,7 +218,7 @@ def main(args, **model_kwargs):
         m = A.shape[1]
         S = cvx.Variable(m)
         objective = cvx.Minimize(cvx.norm(S, p=1))
-        constraint = [yhat[i].T == A * S]
+        constraint = [yhat[i].reshape(-1, ) == A * S]
 
         prob = cvx.Problem(objective, constraint)
         prob.solve()
