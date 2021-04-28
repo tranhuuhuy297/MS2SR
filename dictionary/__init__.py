@@ -1,6 +1,7 @@
 import warnings
 import numpy as np
-from dictionary.utils import random_dictionary
+from dictionary.utils import random_dictionary, dctii, dictionary_from_transform, \
+    overcomplete_idctii_dictionary, unitary_idctii_dictionary
 
 
 class Dictionary:
@@ -107,6 +108,21 @@ class RandomDictionary(Dictionary):
             D = random_dictionary(n, n)
         elif n < K:
             D = random_dictionary(n, K)
+        else:
+            raise ValueError("K has to be as least as large as n.")
+        super().__init__(D)
+
+
+class DCTDictionary(Dictionary):
+    """
+    A Dictionary based on the IDCT-II transform
+    """
+
+    def __init__(self, n, K):
+        if n == K:
+            D = unitary_idctii_dictionary(n)
+        elif n < K:
+            D = overcomplete_idctii_dictionary(n, K)
         else:
             raise ValueError("K has to be as least as large as n.")
         super().__init__(D)
