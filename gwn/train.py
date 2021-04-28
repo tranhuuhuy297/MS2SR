@@ -7,12 +7,13 @@ import math
 import models
 import torch
 import utils
+import numpy as np
 from tqdm import trange
 from routing import *
 from utils import *
-from dictionary import RandomDictionary
+from dictionary import RandomDictionary, DCTDictionary
 from ksvd import KSVD
-from pursuit import MatchingPursuit
+from pursuit import MatchingPursuit, Solver_l0
 import pickle
 import warnings
 
@@ -35,41 +36,22 @@ def get_psi(args, samples=10000, iterator=1):
 
     size_D = int(math.sqrt(X.shape[1]))
 
-    D = RandomDictionary(size_D, size_D)
+    D = DCTDictionary(size_D, size_D)
 
     psi, _ = KSVD(D, MatchingPursuit, int(args.random_rate / 100 * X.shape[1])).fit(X_temp, iterator)
     return psi
 
 
-def get_G(args):
+def get_phi(args, top_k_index):
 
     X = utils.load_raw(args)
-    k_sparse = int(args.random_rate / 100 * X.shape[1])
-    G = np.zeros((k_sparse, X.shape[1]))
+    G = np.zeros((top_k_index.shape[0], X.shape[1]))
 
-    for i in range(G.shape[1]):
-        d = np.random.randint(G.shape[0] * 2)
-        if d < k_sparse:
-            G[d, i] = 1
-        else:
-            continue
+    for i, j in enumerate(G):
+        j[top_k_index[i]] = 1
 
     return G
 
-
-def get_R(args):
-    X = utils.load_raw(args)
-    k_sparse = int(args.random_rate / 100 * X.shape[1])
-    R = np.zeros((k_sparse, X.shape[1]))
-
-    for i in range(R.shape[1]):
-        d = np.random.randint(R.shape[0] * 2)
-        if d < k_sparse:
-            R[d, i] = 1
-        else:
-            continue
-
-    return R
 
 
 def main(args, **model_kwargs):
@@ -185,45 +167,33 @@ def main(args, **model_kwargs):
     yhat = yhat.cpu().data.numpy()
 
     # run TE
-    path_psi_G_R = os.path.join(logger.log_dir, '{}_psi_G_R.pkl'.format(args.dataset))
-    if not os.path.isfile(path_psi_G_R):
+    path_psi_phi = os.path.join(logger.log_dir, '{}_psi_phi.pkl'.format(args.dataset))
+    if not os.path.isfile(path_psi_phi):
 
         psi = get_psi(args)
-        G = get_G(args)
-        R = get_R(args)
+        phi = get_phi(args, top_k_index)
         obj = {
             'psi': psi,
-            'G': G,
-            'R': R
+            'phi': phi
         }
-        with open(path_psi_G_R, 'wb') as fp:
+        with open(path_psi_phi, 'wb') as fp:
             pickle.dump(obj, fp, protocol=pickle.HIGHEST_PROTOCOL)
     else:
-        with open(path_psi_G_R, 'rb') as fp:
+        with open(path_psi_phi, 'rb') as fp:
             obj = pickle.load(fp)
         psi = obj['psi']
-        G = obj['G']
-        R = obj['R']
+        phi = obj['phi']
 
-    A = np.dot(R * G, psi.matrix)
+    np.save('psi.npy', psi.matrix)
+
     ygt_shape = y_gt.shape
+
     y_cs = np.zeros(shape=(ygt_shape[0], 1, ygt_shape[-1]))
 
-    # for i in range(y_gt.shape[0]):
-    #     temp = np.linalg.inv(np.dot(A, A.T))
-    #     S = np.dot(np.dot(A.T, temp), yhat[i].T)
-    #     y_cs[i] = np.dot(psi, S).T
-
-    for i in range(y_gt.shape[0]):
-        m = A.shape[1]
-        S = cvx.Variable(m)
-        objective = cvx.Minimize(cvx.norm(S, p=1))
-        constraint = [yhat[i].reshape(-1, ) >= A * S]
-
-        prob = cvx.Problem(objective, constraint)
-        prob.solve()
-        
-        y_cs[i] = np.dot(psi.matrix, S.value.reshape(m, 1)).T
+    A = np.dot(phi, psi.matrix)
+    for i in range(y_cs.shape[0]):
+        sparse = Solver_l0(A, max_iter=100, sparsity=int(args.random_rate / 100 * y_cs.shape[-1])).fit(yhat[i].T)
+        y_cs[i] = np.dot(psi.matrix, sparse).T
 
     x_gt = torch.from_numpy(x_gt).to(args.device)
     y_gt = torch.from_numpy(y_gt).to(args.device)
