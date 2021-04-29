@@ -99,8 +99,8 @@ class TrafficDataset(Dataset):
         self.X_top_k = np.copy(X[:, self.top_k_index])
 
         # data reconstruction by compressive sensing
-        X_reconstruction = np.zeros(X.shape)
-        X_reconstruction[:, self.top_k_index] = self.X_top_k
+        # X_reconstruction = np.zeros(X.shape)
+        # X_reconstruction[:, self.top_k_index] = self.X_top_k
 
         self.X = self.np2torch(X)
         self.X_top_k = self.np2torch(self.X_top_k)

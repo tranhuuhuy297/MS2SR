@@ -7,17 +7,14 @@ import math
 import models
 import torch
 import utils
-import numpy as np
 from tqdm import trange
 from routing import *
 from utils import *
-from dictionary import RandomDictionary, DCTDictionary
+from dictionary import DCTDictionary
 from ksvd import KSVD
 from pursuit import MatchingPursuit, Solver_l0
 import pickle
 import warnings
-
-import cvxpy as cvx
 
 # ssh aiotlab@202.191.57.61 -p 1111
 
@@ -166,34 +163,40 @@ def main(args, **model_kwargs):
     y_gt = y_gt.cpu().data.numpy()
     yhat = yhat.cpu().data.numpy()
 
-    # run TE
-    path_psi_phi = os.path.join(logger.log_dir, '{}_psi_phi.pkl'.format(args.dataset))
-    if not os.path.isfile(path_psi_phi):
-
-        psi = get_psi(args)
-        phi = get_phi(args, top_k_index)
-        obj = {
-            'psi': psi,
-            'phi': phi
-        }
-        with open(path_psi_phi, 'wb') as fp:
-            pickle.dump(obj, fp, protocol=pickle.HIGHEST_PROTOCOL)
-    else:
-        with open(path_psi_phi, 'rb') as fp:
-            obj = pickle.load(fp)
-        psi = obj['psi']
-        phi = obj['phi']
-
-    np.save('psi.npy', psi.matrix)
-
     ygt_shape = y_gt.shape
+    # run TE
+    if args.cs:
+        y_cs = np.zeros(shape=(ygt_shape[0], 1, ygt_shape[-1]))
 
-    y_cs = np.zeros(shape=(ygt_shape[0], 1, ygt_shape[-1]))
+        # obtain psi, G, R
+        path_psi_phi = os.path.join(logger.log_dir, '{}_psi_phi.pkl'.format(args.dataset))
+        if not os.path.isfile(path_psi_phi):
+            psi = get_psi(args)
+            phi = get_phi(args, top_k_index)
+            obj = {
+                'psi': psi,
+                'phi': phi
+            }
+            with open(path_psi_phi, 'wb') as fp:
+                pickle.dump(obj, fp, protocol=pickle.HIGHEST_PROTOCOL)
+        else:
+            with open(path_psi_phi, 'rb') as fp:
+                obj = pickle.load(fp)
+            psi = obj['psi']
+            phi = obj['phi']
+        np.save('psi.npy', psi.matrix)
 
-    A = np.dot(phi, psi.matrix)
-    for i in range(y_cs.shape[0]):
-        sparse = Solver_l0(A, max_iter=100, sparsity=int(args.random_rate / 100 * y_cs.shape[-1])).fit(yhat[i].T)
-        y_cs[i] = np.dot(psi.matrix, sparse).T
+        # traffic reconstruction
+        A = np.dot(phi, psi.matrix)
+        for i in range(y_cs.shape[0]):
+            sparse = Solver_l0(A, max_iter=100, sparsity=int(args.random_rate / 100 * y_cs.shape[-1])).fit(yhat[i].T)
+            y_cs[i] = np.dot(psi.matrix, sparse).T
+
+    else:
+        top_k_index = train_loader.dataset.top_k_index
+        y_cs = np.ones(shape=(ygt_shape[0], 1, ygt_shape[-1]))
+        y_cs[:, :, top_k_index] = yhat
+        print(y_cs)
 
     x_gt = torch.from_numpy(x_gt).to(args.device)
     y_gt = torch.from_numpy(y_gt).to(args.device)

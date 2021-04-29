@@ -14,6 +14,8 @@ def get_args():
                                  'brain10_tm', 'abilene10_tm'],
                         help='Dataset, (default abilene_tm)')
     parser.add_argument('--random_rate', type=int, default=10)
+    parser.add_argument('--cs', type=int, default=1, choices=[0, 1])
+
     parser.add_argument('--datapath', type=str, default='../../data')
     parser.add_argument('--type', type=str, default='p2', choices=['p1', 'p2', 'p3'],
                         help='problem formulation (default p2)')
