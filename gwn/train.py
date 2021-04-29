@@ -164,7 +164,9 @@ def main(args, **model_kwargs):
     yhat = yhat.cpu().data.numpy()
 
     ygt_shape = y_gt.shape
-    # run TE
+    top_k_index = train_loader.dataset.top_k_index
+
+    # traffic reconstruction
     if args.cs:
         y_cs = np.zeros(shape=(ygt_shape[0], 1, ygt_shape[-1]))
 
@@ -186,14 +188,15 @@ def main(args, **model_kwargs):
             phi = obj['phi']
         np.save('psi.npy', psi.matrix)
 
-        # traffic reconstruction
+        # traffic reconstruction using compressive sensing
         A = np.dot(phi, psi.matrix)
         for i in range(y_cs.shape[0]):
             sparse = Solver_l0(A, max_iter=100, sparsity=int(args.random_rate / 100 * y_cs.shape[-1])).fit(yhat[i].T)
             y_cs[i] = np.dot(psi.matrix, sparse).T
 
+        y_cs[:, :, top_k_index] = yhat
+
     else:
-        top_k_index = train_loader.dataset.top_k_index
         y_cs = np.ones(shape=(ygt_shape[0], 1, ygt_shape[-1]))
         y_cs[:, :, top_k_index] = yhat
         print(y_cs)
