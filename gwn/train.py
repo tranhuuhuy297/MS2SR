@@ -199,13 +199,12 @@ def main(args, **model_kwargs):
     else:
         y_cs = np.ones(shape=(ygt_shape[0], 1, ygt_shape[-1]))
         y_cs[:, :, top_k_index] = yhat
-        print(y_cs)
 
     x_gt = torch.from_numpy(x_gt).to(args.device)
     y_gt = torch.from_numpy(y_gt).to(args.device)
     yhat = torch.from_numpy(yhat).to(args.device)
     y_cs = torch.from_numpy(y_cs).to(args.device)
-
+    y_cs[y_cs < 0] = 0
     test_met = []
     for i in range(y_cs.shape[1]):
         pred = y_cs[:, i, :]
