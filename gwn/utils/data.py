@@ -88,20 +88,17 @@ class TrafficDataset(Dataset):
         self.out_seq_len = args.out_seq_len
         self.trunk = args.trunk
 
-        self.k = args.k  # granularity
-
         self.oX = np.copy(X)
         self.oX = self.np2torch(self.oX)
 
+        # granularity
+        X = granularity(X, args.k)
+
+        # get top k flows
         self.top_k_index = top_k_index
 
         # data train to get psi
         self.X_top_k = np.copy(X[:, self.top_k_index])
-
-        # data reconstruction by compressive sensing
-        # X_reconstruction = np.zeros(X.shape)
-        # X_reconstruction[:, self.top_k_index] = self.X_top_k
-
         self.X = self.np2torch(X)
         self.X_top_k = self.np2torch(self.X_top_k)
 
@@ -303,4 +300,4 @@ def get_dataloader(args):
                              batch_size=args.test_batch_size,
                              shuffle=False)
 
-    return train_loader, val_loader, test_loader, None, top_k_index
+    return train_loader, val_loader, test_loader, top_k_index

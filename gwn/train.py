@@ -40,7 +40,6 @@ def get_psi(args, samples=10000, iterator=100):
 
 
 def get_phi(args, top_k_index):
-
     X = utils.load_raw(args)
     G = np.zeros((top_k_index.shape[0], X.shape[1]))
 
@@ -48,7 +47,6 @@ def get_phi(args, top_k_index):
         j[top_k_index[i]] = 1
 
     return G
-
 
 
 def main(args, **model_kwargs):
@@ -69,7 +67,7 @@ def main(args, **model_kwargs):
     else:
         raise ValueError('Dataset not found!')
 
-    train_loader, val_loader, test_loader, graphs, top_k_index = utils.get_dataloader(args)
+    train_loader, val_loader, test_loader, top_k_index = utils.get_dataloader(args)
 
     args.train_size, args.nSeries = train_loader.dataset.X_scaled_top_k.shape
     args.val_size = val_loader.dataset.X_scaled_top_k.shape[0]
@@ -164,10 +162,8 @@ def main(args, **model_kwargs):
     yhat = yhat.cpu().data.numpy()
 
     ygt_shape = y_gt.shape
-    top_k_index = train_loader.dataset.top_k_index
-
-    # traffic reconstruction
     if args.cs:
+        print('|--- Traffic reconstruction using CS')
         y_cs = np.zeros(shape=(ygt_shape[0], 1, ygt_shape[-1]))
 
         # obtain psi, G, R
@@ -197,7 +193,8 @@ def main(args, **model_kwargs):
         y_cs[:, :, top_k_index] = yhat
 
     else:
-        y_cs = np.zeros(shape=(ygt_shape[0], 1, ygt_shape[-1]))
+        print('|--- No traffic reconstruction')
+        y_cs = np.ones(shape=(ygt_shape[0], 1, ygt_shape[-1]))
         y_cs[:, :, top_k_index] = yhat
 
     x_gt = torch.from_numpy(x_gt).to(args.device)
@@ -219,9 +216,8 @@ def main(args, **model_kwargs):
     if args.run_te:
         x_gt = x_gt.cpu().data.numpy()  # [timestep, seq_x, seq_y]
         y_gt = y_gt.cpu().data.numpy()
-        yhat = yhat.cpu().data.numpy()
         y_cs = y_cs.cpu().data.numpy()
-    
+
         run_te(x_gt, y_gt, y_cs, args)
 
 
