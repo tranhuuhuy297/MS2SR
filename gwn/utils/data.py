@@ -92,6 +92,7 @@ class TrafficDataset(Dataset):
         self.oX = self.np2torch(self.oX)
 
         # granularity
+        self.k = args.k
         X = granularity(X, args.k)
 
         # get top k flows
