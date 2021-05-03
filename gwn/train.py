@@ -190,7 +190,7 @@ def main(args, **model_kwargs):
             sparse = Solver_l0(A, max_iter=100, sparsity=int(args.random_rate / 100 * y_cs.shape[-1])).fit(yhat[i].T)
             y_cs[i] = np.dot(psi.matrix, sparse).T
 
-        y_cs[:, :, top_k_index] = yhat
+        # y_cs[:, :, top_k_index] = yhat
 
     else:
         print('|--- No traffic reconstruction')
