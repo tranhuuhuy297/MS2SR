@@ -269,8 +269,8 @@ def get_dataloader(args):
     # loading data
     X = load_raw(args)
 
-    if X.shape[0] > 45000:
-        _size = 45000
+    if X.shape[0] > 10000:
+        _size = 10000
     else:
         _size = X.shape[0]
 
@@ -278,10 +278,13 @@ def get_dataloader(args):
 
     train, val, test = train_test_split(X)
 
+    if train.shape[0] > 5000:
+        train = train[-5000:]
+
     random_time_step = rd.randint(0, len(train))
     # get top k biggest
 
-    top_k_index = largest_indices(train[random_time_step], int(args.random_rate/100 * train.shape[1]))
+    top_k_index = largest_indices(train[random_time_step], int(args.random_rate / 100 * train.shape[1]))
     top_k_index = np.sort(top_k_index)[0]
 
     # Training set
