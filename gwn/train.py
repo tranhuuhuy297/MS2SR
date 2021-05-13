@@ -190,6 +190,8 @@ def main(args, **model_kwargs):
             sparse = Solver_l0(A, max_iter=100, sparsity=int(args.random_rate / 100 * y_cs.shape[-1])).fit(yhat[i].T)
             y_cs[i] = np.dot(psi.matrix, sparse).T
 
+        # y_cs[:, :, top_k_index] = yhat
+
     else:
         print('|--- No traffic reconstruction')
         y_cs = np.ones(shape=(ygt_shape[0], 1, ygt_shape[-1]))
@@ -209,6 +211,7 @@ def main(args, **model_kwargs):
     test_met_df.round(6).to_csv(os.path.join(logger.log_dir, 'test_metrics.csv'))
     print('Prediction Accuracy:')
     print(utils.summary(logger.log_dir))
+    print('Shape of Prediction: ', yhat.shape)
 
     if args.run_te:
         x_gt = x_gt.cpu().data.numpy()  # [timestep, seq_x, seq_y]

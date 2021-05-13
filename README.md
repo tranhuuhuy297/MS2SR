@@ -8,4 +8,9 @@ Prediction" - under review at IM2021.
 python train.py --do_graph_conv {--aptonly --addaptadj} --type {p1/p2/p3}
 
 python train.py --do_graph_conv --aptonly --addaptadj --randomadj --train_batch_size 16 --val_batch_size 16 --dataset
-abilene_tm --test --run_te
+abilene_tm --run_te --random_rate 10
+
+# Test
+
+python train.py --do_graph_conv --aptonly --addaptadj --randomadj --train_batch_size 16 --val_batch_size 16 --dataset
+abilene_tm --test --run_te --random_rate 10
