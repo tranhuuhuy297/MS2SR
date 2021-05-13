@@ -1,4 +1,4 @@
-from .data import get_dataloader
+from .data import get_dataloader, load_raw
 from .engine import Trainer
 from .exp_results import summary
 from .interp import interp

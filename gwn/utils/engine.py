@@ -5,11 +5,12 @@ from .metric import *
 
 
 class Trainer():
-    def __init__(self, model, scaler, lrate, wdecay, clip=3, lr_decay_rate=.97, lossfn='mae'):
+    def __init__(self, model, scaler, scaler_top_k, lrate, wdecay, clip=3, lr_decay_rate=.97, lossfn='mae'):
         self.model = model
 
         self.optimizer = optim.Adam(self.model.parameters(), lr=lrate, weight_decay=wdecay)
         self.scaler = scaler
+        self.scaler_top_k = scaler_top_k
         self.clip = clip
         self.scheduler = optim.lr_scheduler.LambdaLR(
             self.optimizer, lr_lambda=lambda epoch: lr_decay_rate ** epoch)
@@ -26,8 +27,8 @@ class Trainer():
             raise ValueError('Loss fn not found!')
 
     @classmethod
-    def from_args(cls, model, scaler, args):
-        return cls(model, scaler, args.learning_rate, args.weight_decay, clip=args.clip,
+    def from_args(cls, model, scaler, scaler_top_k, args):
+        return cls(model, scaler, scaler_top_k, args.learning_rate, args.weight_decay, clip=args.clip,
                    lr_decay_rate=args.lr_decay_rate, lossfn=args.loss_fn)
 
     def train(self, input, real_val):
@@ -36,7 +37,8 @@ class Trainer():
         # input = torch.nn.functional.pad(input, (1, 0, 0, 0))
 
         output = self.model(input)  # now, output = [bs, seq_y, n]
-        predict = self.scaler.inverse_transform(output)
+        # predict = self.scaler.inverse_transform(output)
+        predict = self.scaler_top_k.inverse_transform(output)
 
         loss = self.lossfn(predict, real_val)
         rse, mae, mse, mape, rmse = calc_metrics(predict, real_val)
@@ -52,7 +54,8 @@ class Trainer():
 
         output = self.model(input)  # now, output = [bs, seq_y, n]
 
-        predict = self.scaler.inverse_transform(output)
+        # predict = self.scaler.inverse_transform(output)
+        predict = self.scaler_top_k.inverse_transform(output)
 
         predict = torch.clamp(predict, min=0., max=10e10)
         loss = self.lossfn(predict, real_val)
@@ -63,6 +66,7 @@ class Trainer():
     def test(self, test_loader, model, out_seq_len):
         model.eval()
         outputs = []
+        y_real_top_k = []
         y_real = []
         x_gt = []
         y_gt = []
@@ -70,17 +74,21 @@ class Trainer():
             # x = batch['x']  # [b, seq_x, n, f]
             # y = batch['y']  # [b, seq_y, n]
 
-            x = batch['x_top_k']
-            y = batch['y_top_k']
+            x_top_k = batch['x_top_k']
+            y_top_k = batch['y_top_k']
+            y = batch['y']
 
-            preds = model(x)
-            preds = self.scaler.inverse_transform(preds)  # [bs, seq_y, n]
-            outputs.append(preds)
+            preds_top_k = model(x_top_k)
+            preds_top_k = self.scaler_top_k.inverse_transform(preds_top_k)
+            outputs.append(preds_top_k)
+            y_real_top_k.append(y_top_k)
+
             y_real.append(y)
             x_gt.append(batch['x_gt'])
             y_gt.append(batch['y_gt'])
 
         yhat = torch.cat(outputs, dim=0)
+        y_real_top_k = torch.cat(y_real_top_k, dim=0)
         y_real = torch.cat(y_real, dim=0)
         x_gt = torch.cat(x_gt, dim=0)
         y_gt = torch.cat(y_gt, dim=0)
@@ -91,7 +99,7 @@ class Trainer():
         for i in range(out_seq_len):
             pred = yhat[:, i, :]
             pred = torch.clamp(pred, min=0., max=10e10)
-            real = y_real[:, i, :]
+            real = y_real_top_k[:, i, :]
             test_met.append([x.item() for x in calc_metrics(pred, real)])
         test_met_df = pd.DataFrame(test_met, columns=['rse', 'mae', 'mse', 'mape', 'rmse']).rename_axis('t')
         return test_met_df, x_gt, y_gt, y_real, yhat
