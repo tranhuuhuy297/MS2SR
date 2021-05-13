@@ -10,7 +10,9 @@ class BiLSTM_max(torch.nn.Module):
         self.in_dim = args.in_dim
         self.out_dim = args.out_dim
         self.lstm_hidden = args.hidden
-        self.dropout = args.dropout if self.num_layers > 1 else 0
+        # self.dropout = args.dropout if self.num_layers > 1 else 0
+
+        self.dropout = args.dropout
 
         self.seq_len_x = args.seq_len_x
         self.out_seq_len = args.out_seq_len

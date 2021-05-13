@@ -13,12 +13,14 @@ def get_args():
                         choices=['abilene_tm', 'geant_tm', 'brain_tm', 'brain5_tm', 'brain15_tm', 'abilene15_tm',
                                  'brain10_tm', 'abilene10_tm'],
                         help='Dataset, (default abilene_tm)')
-    parser.add_argument('--run_cs', action='store_true', help='run with compressive sensing')
     parser.add_argument('--random_rate', type=int, default=10)
+    parser.add_argument('--cs', type=int, default=1, choices=[0, 1])
+
     parser.add_argument('--datapath', type=str, default='../../data')
     parser.add_argument('--type', type=str, default='p2', choices=['p1', 'p2', 'p3'],
                         help='problem formulation (default p2)')
     parser.add_argument('--trunk', type=int, default=3, help='trunk for p3 problem (default 3)')
+    parser.add_argument('--k', type=int, default=1, help='granularity scale', choices=[1, 2, 3])
 
     parser.add_argument('--tod', action='store_true')
     parser.add_argument('--ma', action='store_true')
@@ -45,8 +47,8 @@ def get_args():
 
     parser.add_argument('--dilation_channels', type=int, default=32, help='inputs dimension (default 32)')
     parser.add_argument('--residual_channels', type=int, default=32, help='inputs dimension')
-    parser.add_argument('--skip_channels', type=int, default=256, help='inputs dimension')
-    parser.add_argument('--end_channels', type=int, default=512, help='inputs dimension')
+    parser.add_argument('--skip_channels', type=int, default=64, help='inputs dimension')
+    parser.add_argument('--end_channels', type=int, default=128, help='inputs dimension')
 
     parser.add_argument('--blocks', type=int, default=5, help='')
     parser.add_argument('--layers', type=int, default=2, help='')
@@ -65,7 +67,7 @@ def get_args():
     parser.add_argument('--train_batch_size', type=int, default=256)
     parser.add_argument('--val_batch_size', type=int, default=256)
     parser.add_argument('--test_batch_size', type=int, default=1)
-    parser.add_argument('--device', type=str, default='cuda:3')
+    parser.add_argument('--device', type=str, default='cuda:0')
 
     parser.add_argument('--epochs', type=int, default=100, help='')
     parser.add_argument('--clip', type=int, default=3, help='Gradient Clipping')
@@ -116,8 +118,8 @@ def print_args(args):
     print('[+] Time-series prediction experiment')
     print('---------------------------------------------------------')
     print('    - dataset                :', args.dataset)
+    print('    - granularity scale      :', args.k)
     print('    - num_series             :', args.nSeries)
-    print('    - comressive_sensing     :', args.run_cs)
     print('    - random measure rate    : {}%'.format(args.random_rate))
     print('    - train size             : {}x{}'.format(args.train_size, args.nSeries))
     print('    - val size               : {}x{}'.format(args.val_size, args.nSeries))

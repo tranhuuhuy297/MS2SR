@@ -268,7 +268,7 @@ class LS2SRSolver:
     def apply_solution(self, utilizations):
         nx.set_edge_attributes(self.G, utilizations, name='utilization')
 
-    def solve(self, tm, solution=None, eps=1e-6):
+    def solve(self, tm, solution=None, eps=1e-8):
         # save parameters
         self.tm = tm
 

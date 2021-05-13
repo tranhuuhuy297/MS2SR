@@ -199,8 +199,9 @@ def ls2sr_p2(yhat, y_gt, x_gt, G, segments, te_step, args):
                                           gt_tms=y_gt[i], p_solution=solution, nNodes=args.nNodes)
         # print(np.sum(y_gt[i]), ' ', std_mean, ' ', std_std, ' ', np.mean(u), ' ', theo_lamda)
         dynamicity[i] = [np.sum(y_gt[i]), std_mean, std_std, np.sum(std), np.mean(u), theo_lamda]
+
         _solution = solution.copy()
-        results.append((u, solution))
+        results.append((u, _solution))
 
     mlu, solution = extract_results(results)
     route_changes = get_route_changes_heuristic(solution)
@@ -464,9 +465,9 @@ def run_te(x_gt, y_gt, yhat, args):
     print('    Method           |   Min     Avg    Max     std')
 
     ls2sr_p2(yhat, y_gt, x_gt, graph, segments, te_step, args)
-    optimal_p1_solver(yhat, y_gt, x_gt, graph, segments, te_step, args)
-    optimal_p2_solver(yhat, y_gt, x_gt, graph, segments, te_step, args)
-    optimal_p3_solver(yhat, y_gt, x_gt, graph, segments, te_step, args)
-    one_step_predicted_solver(yhat, y_gt, x_gt, graph, segments, te_step, args)
-    last_step_solver(yhat, y_gt, x_gt, graph, segments, te_step, args)
-    oblivious_routing_solver(yhat, y_gt, x_gt, graph, segments, te_step, args)
+    # optimal_p1_solver(yhat, y_gt, x_gt, graph, segments, te_step, args)
+    # optimal_p2_solver(yhat, y_gt, x_gt, graph, segments, te_step, args)
+    # optimal_p3_solver(yhat, y_gt, x_gt, graph, segments, te_step, args)
+    # one_step_predicted_solver(yhat, y_gt, x_gt, graph, segments, te_step, args)
+    # last_step_solver(yhat, y_gt, x_gt, graph, segments, te_step, args)
+    # oblivious_routing_solver(yhat, y_gt, x_gt, graph, segments, te_step, args)

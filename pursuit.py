@@ -72,6 +72,7 @@ class MatchingPursuit(Pursuit):
                 if np.isclose(alpha, 0):
                     break
                 coeffs[gamma] += alpha
+                # coeffs[coeffs < 0] = 0
                 i += 1
                 if self.sparsity:
                     finished = np.count_nonzero(coeffs) >= self.sparsity
@@ -105,3 +106,70 @@ class ThresholdingPursuit(Pursuit):
         idx = np.argsort(-inners.T)[:self.sparsity, :self.sparsity]
         gammas.T[idx] = inners[idx]
         return gammas.T
+
+
+class Solver:
+
+    def __init__(self, A, max_iter=False, tol=None, sparsity=None):
+        self.D = A
+        self.max_iter = max_iter
+        self.tol = tol
+        self.sparsity = sparsity
+        if (self.tol is None and self.sparsity is None) or (self.tol is not None and self.sparsity is not None):
+            raise ValueError("blub")
+        self.data = None
+        self.alphas = []
+
+    def fit(self, Y):
+        return [], self.alphas
+
+
+class Solver_l0(Solver):
+
+    def fit(self, Y):
+        # analyze shape of Y
+        data_n = Y.shape[0]
+        if len(Y.shape) == 1:
+            self.data = np.array([Y])
+        elif len(Y.shape) == 2:
+            self.data = Y
+        else:
+            raise ValueError("Input must be a vector or a matrix.")
+
+        # analyze dimensions
+        n, K = self.D.shape
+        if not n == data_n:
+            raise ValueError("Dimension mismatch: %s != %s" % (n, data_n))
+
+        for y in self.data.T:
+            # temporary values
+            coeffs = np.zeros(K)
+            residual = y
+
+            # iterate
+            i = 0
+            if self.max_iter:
+                m = self.max_iter
+            else:
+                m = np.inf
+
+            finished = False
+
+            while not finished:
+                if i >= m:
+                    break
+                inner = np.dot(self.D.T, residual)
+                gamma = int(np.argmax(np.abs(inner)))
+                alpha = inner[gamma]
+                residual = residual - alpha * self.D[:, gamma]
+                if np.isclose(alpha, 0):
+                    break
+                coeffs[gamma] += alpha
+                # coeffs[coeffs < 0] = 0
+                i += 1
+                if self.sparsity:
+                    finished = np.count_nonzero(coeffs) >= self.sparsity
+                else:
+                    finished = (np.linalg.norm(residual) ** 2 < n * self.tol ** 2) or i >= n / 2
+            self.alphas.append(coeffs)
+        return np.transpose(self.alphas)
