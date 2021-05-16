@@ -56,7 +56,8 @@ def main(args, **model_kwargs):
     # psi = get_psi(args).matrix
 
     # # phi
-    # train_loader, val_loader, test_loader, top_k_index = utils.get_dataloader(args)
+    train_loader, val_loader, test_loader, top_k_index = utils.get_dataloader(args)
+    args.train_size, args.nSeries = train_loader.dataset.X_scaled_top_k.shape
     # phi = get_phi(args, top_k_index)
 
     in_dim = 1
