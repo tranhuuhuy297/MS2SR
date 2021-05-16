@@ -213,7 +213,6 @@ def main(args, **model_kwargs):
     test_met_df.round(6).to_csv(os.path.join(logger.log_dir, 'test_metrics.csv'))
     print('Prediction Accuracy:')
     print(utils.summary(logger.log_dir))
-    print('Shape of Prediction: ', yhat.shape)
 
     if args.run_te:
         x_gt = x_gt.cpu().data.numpy()  # [timestep, seq_x, seq_y]
