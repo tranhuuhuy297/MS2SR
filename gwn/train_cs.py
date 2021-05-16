@@ -59,6 +59,16 @@ def main(args, **model_kwargs):
     # train_loader, val_loader, test_loader, top_k_index = utils.get_dataloader(args)
     # phi = get_phi(args, top_k_index)
 
+    in_dim = 1
+    if args.tod:
+        in_dim += 1
+    if args.ma:
+        in_dim += 1
+    if args.mx:
+        in_dim += 1
+
+    args.in_dim = in_dim
+
     aptinit, supports = utils.make_graph_inputs(args, args.device)
     model = models.GWNet.from_args(args, supports, aptinit, **model_kwargs)
     model.to(args.device)
