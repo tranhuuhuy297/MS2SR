@@ -15,6 +15,7 @@ def get_args():
                         help='Dataset, (default abilene_tm)')
     parser.add_argument('--random_rate', type=int, default=10)
     parser.add_argument('--cs', type=int, default=1, choices=[0, 1])
+    parser.add_argument('--top_k_random', action='store_true')
 
     parser.add_argument('--datapath', type=str, default='../../data')
     parser.add_argument('--type', type=str, default='p2', choices=['p1', 'p2', 'p3'],
@@ -120,6 +121,7 @@ def print_args(args):
     print('    - dataset                :', args.dataset)
     print('    - granularity scale      :', args.k)
     print('    - num_series             :', args.nSeries)
+    print('    - top_k_random           :', args.top_k_random)
     print('    - random measure rate    : {}%'.format(args.random_rate))
     print('    - train size             : {}x{}'.format(args.train_size, args.nSeries))
     print('    - val size               : {}x{}'.format(args.val_size, args.nSeries))
