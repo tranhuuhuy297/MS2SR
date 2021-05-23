@@ -65,8 +65,7 @@ def main(args, **kwargs):
     # plt.title(dataset + '_' + time_period)
     # plt.savefig('plot_traffic/' + dataset + '_' + time_period + '.png')
 
-    data = np.mean(data, axis=1)
-    var = np.var(data)
+    var = np.var(data, axis=0)
     if (time_period=='h'): print('Variance of {} by Hour: {}'.format(dataset, var))
     elif (time_period=='d'): print('Variance of {} by Day: {}'.format(dataset, var))
     elif (time_period=='m'): print('Variance of {} by Month: {}'.format(dataset, var))
