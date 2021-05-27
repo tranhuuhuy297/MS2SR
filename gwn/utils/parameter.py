@@ -89,10 +89,8 @@ def get_args():
                         choices=['None', 'ls2sr', 'p1', 'p0', 'p2', 'p3', 'onestep', 'laststep', 'or'],
                         default='ls2sr')
 
-    # parser.add_argument('--test_routing', type=str, default='sr',
-    #                     choices=['sr', 'sp', 'or', 'ta'])
-    # parser.add_argument('--mon_policy', type=str, default='random',
-    #                     choices=['heavy_hitter', 'fluctuation', 'fgg', 'random'])
+    parser.add_argument('--timeout', type=float, default=10.0)
+
     parser.add_argument('--te_step', type=int, default=0)
 
     # get args
