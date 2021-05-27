@@ -253,33 +253,37 @@ def load_raw(args):
 
 
 def train_test_split(X):
-    train_size = int(X.shape[0] * 0.7)
+    train_size = int(X.shape[0] * 0.5)
     val_size = int(X.shape[0] * 0.1)
+    test_size = X.shape[0] - train_size - val_size
+
+    if train_size >= 7000:
+        train_size = 7000
+    if val_size >= 1000:
+        val_size = 1000
+
+    if test_size >= 1000:
+        test_size = 1000
 
     X_train = X[:train_size]
 
     X_val = X[train_size:val_size + train_size]
 
-    X_test = X[val_size + train_size:]
+    X_test_list = []
+    for i in range(10):
+        X_test = X[val_size + train_size + test_size * i: val_size + train_size + test_size * (i + 1)]
+        X_test_list.append(X_test)
+        if val_size + train_size + test_size * (i + 1) >= X.shape[0]:
+            break
 
-    return X_train, X_val, X_test
+    return X_train, X_val, X_test_list
 
 
 def get_dataloader(args):
     # loading data
     X = load_raw(args)
 
-    if X.shape[0] > 10000:
-        _size = 10000
-    else:
-        _size = X.shape[0]
-
-    X = X[:_size]
-
-    train, val, test = train_test_split(X)
-
-    if train.shape[0] > 5000:
-        train = train[-5000:]
+    train, val, test_list = train_test_split(X)
 
     random_time_step = rd.randint(0, len(train))
     # get top k biggest
@@ -287,7 +291,7 @@ def get_dataloader(args):
     top_k_index = largest_indices(train[random_time_step], int(args.random_rate / 100 * train.shape[1]))
     top_k_index = np.sort(top_k_index)[0]
 
-    if (args.top_k_random):
+    if args.top_k_random:
         top_k_index = np.random.randint(X.shape[1], size=top_k_index.shape[0])
 
     # Training set
@@ -302,7 +306,7 @@ def get_dataloader(args):
                             batch_size=args.val_batch_size,
                             shuffle=False)
 
-    test_set = TrafficDataset(test, args=args, scaler=train_set.scaler, top_k_index=top_k_index)
+    test_set = TrafficDataset(test_list[args.testset], args=args, scaler=train_set.scaler, top_k_index=top_k_index)
     test_loader = DataLoader(test_set,
                              batch_size=args.test_batch_size,
                              shuffle=False)
