@@ -214,7 +214,7 @@ def main(args, **model_kwargs):
     print('Prediction Accuracy:')
     print(utils.summary(logger.log_dir))
 
-    if args.run_te:
+    if args.run_te != 'None':
         x_gt = x_gt.cpu().data.numpy()  # [timestep, seq_x, seq_y]
         y_gt = y_gt.cpu().data.numpy()
         y_cs = y_cs.cpu().data.numpy()
