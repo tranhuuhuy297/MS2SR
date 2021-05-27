@@ -45,7 +45,7 @@ class OneStepSRSolver:
         # 3) constraint function
         # ensure all traffic are routed
         for i, j in itertools.product(range(self.num_node), range(self.num_node)):
-            problem += pl.lpSum(x[util.flatten_index(i, j, k, self.num_node)] for k in range(self.num_node)) >= 1.0
+            problem += pl.lpSum(x[util.flatten_index(i, j, k, self.num_node)] for k in range(self.num_node)) == 1
 
         return problem, x
 
@@ -81,8 +81,8 @@ class OneStepSRSolver:
         for i, j in itertools.product(range(self.num_node), range(self.num_node)):
             self.solution[i, j, i] = 1
 
-    def solve(self, tms):
-        problem, x = self.create_problem(tms)
+    def solve(self, tm):
+        problem, x = self.create_problem(tm)
         self.init_solution()
         problem.solve()
         self.problem = problem

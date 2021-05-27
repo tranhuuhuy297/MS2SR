@@ -70,7 +70,7 @@ class ObliviousRoutingSolver:
         # 3) constraint function 4
         for i, j in itertools.product(range(self.num_nodes),
                                       range(self.num_nodes)):  # forall ij:   sunm(alpha_ijk) == 1.0
-            problem += pl.lpSum(x[util.flatten_index(i, j, k, self.num_nodes)] for k in range(self.num_nodes)) == 1.0
+            problem += pl.lpSum(x[util.flatten_index(i, j, k, self.num_nodes)] for k in range(self.num_nodes)) == 1
 
         return problem, x
 
