@@ -152,52 +152,26 @@ def main(args, **model_kwargs):
     engine.model.load_state_dict(torch.load(logger.best_model_save_path))
     with torch.no_grad():
         test_met_df, x_gt, y_gt, y_real, yhat = engine.test(test_loader, engine.model, args.out_seq_len)
-        test_met_df.round(6).to_csv(os.path.join(logger.log_dir, 'test_metrics.csv'))
-        print('Prediction Accuracy:')
-        print(utils.summary(logger.log_dir))
-
-    if args.plot:
-        logger.plot(x_gt, y_real, yhat)
 
     x_gt = x_gt.cpu().data.numpy()  # [timestep, seq_x, seq_y]
     y_gt = y_gt.cpu().data.numpy()
     yhat = yhat.cpu().data.numpy()
 
     ygt_shape = y_gt.shape
-    if args.cs:
-        print('|--- Traffic reconstruction using CS')
-        y_cs = np.zeros(shape=(ygt_shape[0], 1, ygt_shape[-1]))
+    y_cs = np.zeros(shape=(ygt_shape[0], 1, ygt_shape[-1]))
 
-        # obtain psi, G, R
-        path_psi_phi = os.path.join(logger.log_dir, '{}_psi_phi.pkl'.format(args.dataset))
-        if not os.path.isfile(path_psi_phi):
-            psi = get_psi(args)
-            phi = get_phi(args, top_k_index)
-            obj = {
-                'psi': psi,
-                'phi': phi
-            }
-            with open(path_psi_phi, 'wb') as fp:
-                pickle.dump(obj, fp, protocol=pickle.HIGHEST_PROTOCOL)
-        else:
-            with open(path_psi_phi, 'rb') as fp:
-                obj = pickle.load(fp)
-            psi = obj['psi']
-            phi = obj['phi']
-        np.save('psi.npy', psi.matrix)
+    y_temp = np.max(y_gt, axis=1)
+    y_test_gt = y_temp.reshape(y_temp.shape[0], 1, y_temp.shape[-1])
+    y_test = y_temp[:, top_k_index].reshape(y_temp.shape[0], 1, len(top_k_index))
+    yhat = y_test
 
-        # traffic reconstruction using compressive sensing
-        A = np.dot(phi, psi.matrix)
-        for i in range(y_cs.shape[0]):
-            sparse = Solver_l0(A, max_iter=100, sparsity=int(args.random_rate / 100 * y_cs.shape[-1])).fit(yhat[i].T)
-            y_cs[i] = np.dot(psi.matrix, sparse).T
+    psi = get_psi(args)
+    phi = get_phi(args, top_k_index)
 
-        # y_cs[:, :, top_k_index] = yhat
-
-    else:
-        print('|--- No traffic reconstruction')
-        y_cs = np.ones(shape=(ygt_shape[0], 1, ygt_shape[-1]))
-        y_cs[:, :, top_k_index] = yhat
+    A = np.dot(phi, psi.matrix)
+    for i in range(y_cs.shape[0]):
+        sparse = Solver_l0(A, max_iter=100, sparsity=int(args.random_rate / 100 * y_cs.shape[-1])).fit(yhat[i].T)
+        y_cs[i] = np.dot(psi.matrix, sparse).T
 
     x_gt = torch.from_numpy(x_gt).to(args.device)
     y_gt = torch.from_numpy(y_gt).to(args.device)
@@ -213,14 +187,6 @@ def main(args, **model_kwargs):
     test_met_df.round(6).to_csv(os.path.join(logger.log_dir, 'test_metrics.csv'))
     print('Prediction Accuracy:')
     print(utils.summary(logger.log_dir))
-
-    if args.run_te:
-        x_gt = x_gt.cpu().data.numpy()  # [timestep, seq_x, seq_y]
-        y_gt = y_gt.cpu().data.numpy()
-        y_cs = y_cs.cpu().data.numpy()
-
-        run_te(x_gt, y_gt, y_cs, args)
-
 
 if __name__ == "__main__":
     args = utils.get_args()
