@@ -13,6 +13,10 @@ def get_args():
                         choices=['abilene_tm', 'geant_tm', 'brain_tm', 'brain5_tm', 'brain15_tm', 'abilene15_tm',
                                  'brain10_tm', 'abilene10_tm'],
                         help='Dataset, (default abilene_tm)')
+    parser.add_argument('--testset', type=int, default=0,
+                        choices=[0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+                        help='Test set, (default 0)')
+
     parser.add_argument('--random_rate', type=int, default=10)
     parser.add_argument('--cs', type=int, default=1, choices=[0, 1])
     parser.add_argument('--top_k_random', action='store_true')
