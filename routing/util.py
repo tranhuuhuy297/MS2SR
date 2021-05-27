@@ -35,15 +35,17 @@ def generate_traffic_matrix():
     return tm
 
 
-def load_network_topology(dataset):
+def load_network_topology(dataset, datapath):
     # initialize graph
-    G = nx.Graph()
+    G = nx.DiGraph()
     # load node data from csv
-    df = pd.read_csv('../../data/topo/{}_node.csv'.format(dataset), delimiter=' ')
+    path = os.path.join(datapath, 'topo/{}_node.csv'.format(dataset))
+    df = pd.read_csv(path, delimiter=' ')
     for i, row in df.iterrows():
         G.add_node(i, label=row.label, pos=(row.x, row.y))
     # load edge data from csv
-    df = pd.read_csv('../../data/topo/{}_edge.csv'.format(dataset), delimiter=' ')
+    path = os.path.join(datapath, 'topo/{}_edge.csv'.format(dataset))
+    df = pd.read_csv(path, delimiter=' ')
     # add weight, capacity, delay to edge attributes
     for _, row in df.iterrows():
         i = row.src
@@ -147,12 +149,13 @@ def save(path, obj):
         pickle.dump(obj, fp, protocol=pickle.HIGHEST_PROTOCOL)
 
 
-def compute_path(graph, args):
-    folder = '../data/topo'
+def compute_path(graph, dataset, datapath):
+    folder = os.path.join(datapath, 'topo')
     if not os.path.exists(folder):
         os.makedirs(folder)
-    path = os.path.join(folder, '{}_segments_digraph.pkl'.format(args.dataset))
+    path = os.path.join(folder, '{}_segments_digraph.pkl'.format(dataset))
     if os.path.exists(path):
+        print('|--- Load precomputed segment from {}'.format(path))
         data = load(path)
         segments = data['segments']
     else:
@@ -178,8 +181,6 @@ def g(segments, i, j, k, u, v):
     if len(segments[i, j][k][1]) != 0 and (u, v) in segments[i, j][k][1]:
         value += 1
 
-    if value == 2:
-        value = 100
     return value
 
 

@@ -287,6 +287,9 @@ def get_dataloader(args):
     top_k_index = largest_indices(train[random_time_step], int(args.random_rate / 100 * train.shape[1]))
     top_k_index = np.sort(top_k_index)[0]
 
+    if (args.top_k_random):
+        top_k_index = np.random.randint(X.shape[1], size=top_k_index.shape[0])
+
     # Training set
     train_set = TrafficDataset(train, args=args, scaler=None, top_k_index=top_k_index)
     train_loader = DataLoader(train_set,

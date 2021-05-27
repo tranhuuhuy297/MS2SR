@@ -15,6 +15,7 @@ def get_args():
                         help='Dataset, (default abilene_tm)')
     parser.add_argument('--random_rate', type=int, default=10)
     parser.add_argument('--cs', type=int, default=1, choices=[0, 1])
+    parser.add_argument('--top_k_random', action='store_true')
 
     parser.add_argument('--datapath', type=str, default='../../data')
     parser.add_argument('--type', type=str, default='p2', choices=['p1', 'p2', 'p3'],
@@ -80,7 +81,9 @@ def get_args():
     parser.add_argument('--plot', action='store_true')
 
     # parameter for test_routing
-    parser.add_argument('--run_te', action='store_true')
+    parser.add_argument('--run_te', type=str,
+                        choices=['None', 'ls2sr', 'p1', 'p0', 'p2', 'p3', 'onestep', 'laststep', 'or'],
+                        default='ls2sr')
 
     # parser.add_argument('--test_routing', type=str, default='sr',
     #                     choices=['sr', 'sp', 'or', 'ta'])
@@ -120,6 +123,7 @@ def print_args(args):
     print('    - dataset                :', args.dataset)
     print('    - granularity scale      :', args.k)
     print('    - num_series             :', args.nSeries)
+    print('    - top_k_random           :', args.top_k_random)
     print('    - random measure rate    : {}%'.format(args.random_rate))
     print('    - train size             : {}x{}'.format(args.train_size, args.nSeries))
     print('    - val size               : {}x{}'.format(args.val_size, args.nSeries))

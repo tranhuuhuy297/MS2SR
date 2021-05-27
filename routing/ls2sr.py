@@ -1,5 +1,6 @@
 import itertools
 import os
+import pickle
 import time
 
 import networkx as nx
@@ -7,41 +8,19 @@ import numpy as np
 from joblib import delayed, Parallel
 
 
+def load(path):
+    with open(path, 'rb') as fp:
+        obj = pickle.load(fp)
+    return obj
+
+
+def save(path, obj):
+    with open(path, 'wb') as fp:
+        pickle.dump(obj, fp, protocol=pickle.HIGHEST_PROTOCOL)
+
+
 def shortest_path(graph, source, target):
     return nx.shortest_path(graph, source=source, target=target, weight='weight')
-
-
-def remove_duplicated_path(paths):
-    # convert path to string
-    paths = ['-'.join('{}/{}'.format(u, v) for u, v in path) for path in paths]
-    # remove duplicated string
-    paths = list(set(paths))
-    # convert string to path
-    new_paths = []
-    for path in paths:
-        new_path = []
-        for edge_str in path.split('-'):
-            u, v = edge_str.split('/')
-            u, v = int(u), int(v)
-            new_path.append((u, v))
-        new_paths.append(new_path)
-    return new_paths
-
-
-def is_simple_path(path):
-    """
-    input:
-        - path: which is a list of edges (u, v)
-    return:
-        - is_simple_path: bool
-    """
-    edges = []
-    for edge in path:
-        edge = tuple(sorted(edge))
-        if edge in edges:
-            return False
-        edges.append(edge)
-    return True
 
 
 def edge_in_path(edge, path):
@@ -50,27 +29,28 @@ def edge_in_path(edge, path):
         - edge: tuple (u, v)
         - path: list of tuple (u, v)
     """
-    sorted_path_edges = [tuple(sorted(path_edge)) for path_edge in path]
-    if edge in sorted_path_edges:
+    if edge in path:
         return True
     return False
 
 
 class LS2SRSolver:
 
-    def __init__(self, graph, time_limit=10, verbose=False):
+    def __init__(self, graph, args):
+        self.args = args
+
         # save parameters
         self.G = graph
         self.N = graph.number_of_nodes()
         self.n_edges = len(self.G.edges)
         self.indices_edge = np.arange(self.n_edges)
 
-        self.time_limit = time_limit
-        self.verbose = verbose
+        self.timeout = args.timeout
+        self.verbose = args.verbose
 
         # compute paths
         self.link2flow = None
-        self.flow2link = self.initialize_flow2link()
+        self.compute_path()
         self.ub = self.get_solution_bound(self.flow2link)
 
         # data for selecting next link -> demand to be mutate
@@ -150,6 +130,37 @@ class LS2SRSolver:
 
         return flow2link
 
+    def initialize_link2flow(self):
+        """
+        link2flow is a dictionary:
+            - key: link id (u, v)
+            - value: list of flows id (i, j)
+        """
+        link2flow = {}
+        for u, v in self.G.edges:
+            link2flow[(u, v)] = []
+        return link2flow
+
+    def compute_path(self):
+        folder = os.path.join(self.args.datapath, 'ls2sr/precompute_path')
+        if not os.path.exists(folder):
+            os.makedirs(folder)
+        path = os.path.join(folder, '{}.pkl'.format(self.args.dataset))
+        if os.path.exists(path):
+            print('|--- Load precomputed segment from {}'.format(path))
+            data = load(path)
+            self.link2flow = None
+            self.flow2link = data['flow2link']
+        else:
+            print('|--- Compute segment and save to {}'.format(path))
+            self.link2flow = self.initialize_link2flow()
+            self.flow2link = self.initialize_flow2link()
+            data = {
+                'link2flow': self.link2flow,
+                'flow2link': self.flow2link,
+            }
+            save(path, data)
+
     def get_solution_bound(self, flow2link):
         ub = np.empty([self.N, self.N], dtype=int)
         for i, j in itertools.product(range(self.N), range(self.N)):
@@ -158,11 +169,10 @@ class LS2SRSolver:
         return ub
 
     def initialize(self):
-        return np.zeros_like(self.ub)
+        return np.zeros(shape=(self.N, self.N), dtype=int)
 
     def g(self, i, j, u, v, k):
-        if (u, v) in self.flow2link[(i, j)][k] or \
-                (v, u) in self.flow2link[(i, j)][k]:
+        if (u, v) in self.flow2link[(i, j)][k]:
             return 1
         return 0
 
@@ -172,7 +182,7 @@ class LS2SRSolver:
         return False
 
     def set_link_selection_prob(self, alpha=16):
-        # extract parameters
+        # compute the prob
         utilizations = nx.get_edge_attributes(self.G, 'utilization').values()
         utilizations = np.array(list(utilizations))
         self.link_selection_prob = utilizations ** alpha / np.sum(utilizations ** alpha)
@@ -185,15 +195,17 @@ class LS2SRSolver:
         return demands ** beta / np.sum(demands ** beta)
 
     def select_flow(self):
-        # extract parameters
         # select link
         self.set_link_selection_prob()
-
-        index = np.random.choice(self.indices_edge, p=self.link_selection_prob)
+        idx_sort = np.argsort(self.link_selection_prob)[-int(0.2 * len(self.indices_edge)):]
+        indices_edge = self.indices_edge[idx_sort]
+        index = np.random.choice(indices_edge)
         link = list(self.G.edges)[index]
+
         # select flow
         flow_prob = self.set_flow_selection_prob(link[0], link[1])
         indices = np.arange(len(self.link2flow[link]))
+
         index = np.random.choice(indices, p=flow_prob)
         flow = self.link2flow[link][index]
         return flow
@@ -213,10 +225,7 @@ class LS2SRSolver:
                     if edge_in_path(edge, path):
                         self.link2flow[edge].append((i, j))
 
-    def evaluate(self, solution, tm=None):
-        # extract parameters
-        if tm is None:
-            tm = self.tm
+    def evaluate(self, solution, tm):
         # extract utilization
         utilizations = []
         for u, v in self.G.edges:
@@ -231,7 +240,7 @@ class LS2SRSolver:
             utilizations.append(utilization)
         return max(utilizations)
 
-    def evaluate_fast(self, new_path_idx, best_solution, i, j):
+    def evaluate_fast(self, tm, new_path_idx, best_solution, i, j):
         # get current utilization from edges
         utilizations = nx.get_edge_attributes(self.G, 'utilization')
 
@@ -244,11 +253,9 @@ class LS2SRSolver:
 
         # accumulate the utilization
         for u, v in best_path:
-            u, v = sorted([u, v])
-            utilizations[(u, v)] -= self.tm[i, j] / self.G[u][v]['capacity']
+            utilizations[(u, v)] -= tm[i, j] / self.G[u][v]['capacity']
         for u, v in new_path:
-            u, v = sorted([u, v])
-            utilizations[(u, v)] += self.tm[i, j] / self.G[u][v]['capacity']
+            utilizations[(u, v)] += tm[i, j] / self.G[u][v]['capacity']
 
         return utilizations
 
@@ -269,8 +276,6 @@ class LS2SRSolver:
         nx.set_edge_attributes(self.G, utilizations, name='utilization')
 
     def solve(self, tm, solution=None, eps=1e-8):
-        # save parameters
-        self.tm = tm
 
         # initialize solution
         if solution is None:
@@ -284,7 +289,7 @@ class LS2SRSolver:
 
         # iteratively solve
         tic = time.time()
-        while time.time() - tic < self.time_limit:
+        while time.time() - tic < self.timeout:
             i, j = self.select_flow()
             if i == j:
                 continue
@@ -292,7 +297,7 @@ class LS2SRSolver:
             if new_path_idx >= self.ub[i, j]:
                 new_path_idx = 0
 
-            utilization = self.evaluate_fast(new_path_idx, best_solution, i, j)
+            utilization = self.evaluate_fast(tm, new_path_idx, best_solution, i, j)
             mlu = max(utilization.values())
             if theta - mlu >= eps:
                 self.update_link2flows(old_path_idx=best_solution[i, j], new_path_idx=new_path_idx, i=i, j=j)

@@ -46,7 +46,7 @@ class MultiStepSRSolver:
         # 3) constraint function
         # ensure all traffic are routed
         for i, j in itertools.product(range(self.num_node), range(self.num_node)):
-            problem += pl.lpSum(x[util.flatten_index(i, j, k, self.num_node)] for k in range(self.num_node)) == 1.0
+            problem += pl.lpSum(x[util.flatten_index(i, j, k, self.num_node)] for k in range(self.num_node)) == 1
 
         return problem, x
 
