@@ -171,6 +171,8 @@ def main(args, **model_kwargs):
         # obtain psi, G, R
         path_psi_phi = os.path.join(logger.log_dir, '{}_psi_phi.pkl'.format(args.dataset))
         if not os.path.isfile(path_psi_phi):
+            print('|--- Calculating psi, phi')
+
             psi = get_psi(args)
             phi = get_phi(args, top_k_index)
             obj = {
@@ -180,6 +182,8 @@ def main(args, **model_kwargs):
             with open(path_psi_phi, 'wb') as fp:
                 pickle.dump(obj, fp, protocol=pickle.HIGHEST_PROTOCOL)
         else:
+            print('|--- Loading psi, phi from {}'.format(path_psi_phi))
+
             with open(path_psi_phi, 'rb') as fp:
                 obj = pickle.load(fp)
             psi = obj['psi']
