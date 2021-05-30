@@ -284,7 +284,7 @@ class LS2SRSolver:
         # initialize solver state
         self.set_link2flow(solution)
         best_solution = solution
-        u = self.evaluate(solution)
+        u = self.evaluate(solution, tm=tm)
         theta = u
 
         # iteratively solve
