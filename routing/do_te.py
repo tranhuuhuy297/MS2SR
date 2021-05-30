@@ -215,7 +215,7 @@ def ls2sr_p0(yhat, y_gt, x_gt, G, segments, te_step, args):
 def ls2sr_gwn_p2(yhat, x_gt, y_gt, graph, te_step, args):
     print('ls2sr_gwn_p2')
 
-    alpha = 0.7
+    alpha = 0.9
 
     results = []
     solver = LS2SRSolver(graph=graph, args=args)
