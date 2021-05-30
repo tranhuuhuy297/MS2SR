@@ -196,7 +196,7 @@ def main(args, **model_kwargs):
 
     else:
         print('|--- No traffic reconstruction')
-        y_cs = np.ones(shape=(ygt_shape[0], 1, ygt_shape[-1]))
+        y_cs = np.zeros(shape=(ygt_shape[0], 1, ygt_shape[-1]))
         y_cs[:, :, top_k_index] = yhat
 
     x_gt = torch.from_numpy(x_gt).to(args.device)
