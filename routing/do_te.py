@@ -589,7 +589,7 @@ def p2_heuristic_solver(solver, tm, gt_tms, p_solution, nNodes):
     tm = tm.reshape((nNodes, nNodes))
 
     try:
-        solution = solver.solve(tm, solution=p_solution)  # solve backtrack solution (line 131)
+        solution = solver.solve(tm=tm, solution=p_solution)  # solve backtrack solution (line 131)
     except:
         solution = solver.initialize()
 

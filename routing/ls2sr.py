@@ -56,9 +56,6 @@ class LS2SRSolver:
         # data for selecting next link -> demand to be mutate
         self.link_selection_prob = None
 
-        # cache
-        self.tm = None
-
     # -----------------------------------------------------------------------------------------------------------------
     def sort_paths(self, paths):
         weights = [[sum(self.G.get_edge_data(u, v)['weight'] for u, v in path)] for path in paths]
@@ -187,14 +184,13 @@ class LS2SRSolver:
         utilizations = np.array(list(utilizations))
         self.link_selection_prob = utilizations ** alpha / np.sum(utilizations ** alpha)
 
-    def set_flow_selection_prob(self, u, v, beta=1):
+    def set_flow_selection_prob(self, tm, u, v, beta=1):
         # extract parameters
-        tm = self.tm
         # compute the prob
         demands = np.array([tm[i, j] for i, j in self.link2flow[(u, v)]])
         return demands ** beta / np.sum(demands ** beta)
 
-    def select_flow(self):
+    def select_flow(self, tm):
         # select link
         self.set_link_selection_prob()
         idx_sort = np.argsort(self.link_selection_prob)[-int(0.2 * len(self.indices_edge)):]
@@ -203,7 +199,7 @@ class LS2SRSolver:
         link = list(self.G.edges)[index]
 
         # select flow
-        flow_prob = self.set_flow_selection_prob(link[0], link[1])
+        flow_prob = self.set_flow_selection_prob(tm, link[0], link[1])
         indices = np.arange(len(self.link2flow[link]))
 
         index = np.random.choice(indices, p=flow_prob)
@@ -290,7 +286,7 @@ class LS2SRSolver:
         # iteratively solve
         tic = time.time()
         while time.time() - tic < self.timeout:
-            i, j = self.select_flow()
+            i, j = self.select_flow(tm)
             if i == j:
                 continue
             new_path_idx = best_solution[i, j] + 1
