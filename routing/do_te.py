@@ -233,6 +233,8 @@ def ls2sr_gwn_p2(yhat, x_gt, y_gt, graph, te_step, args):
         theo_lamda = calculate_lamda(y_gt=y_gt[i])
 
         pred_tm = alpha * yhat[i] + (1.0 - alpha) * x_gt[i, -1, :]
+        print(yhat[i].shape)
+        print(x_gt[i, -1, :].shape)
         u, solution = p2_heuristic_solver(solver, tm=pred_tm,
                                           gt_tms=y_gt[i], p_solution=solution, nNodes=args.nNodes)
         dynamicity[i] = [np.sum(y_gt[i]), std_mean, std_std, np.sum(std), maxmax_mean, np.mean(u), theo_lamda]
