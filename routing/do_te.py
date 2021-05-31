@@ -256,8 +256,8 @@ def ls2sr_gwn_p2(yhat, x_gt, y_gt, graph, te_step, args):
     congested = mlu[mlu > 1.0].size
     print('Congestion_rate: {}/{}'.format(congested, mlu.size))
 
-    save_results(args.log_dir, 'ls2sr_p2_cs_{}'.format(args.cs), mlu, route_changes)
-    np.save(os.path.join(args.log_dir, 'ls2sr_p2_dyn_cs_{}'.format(args.cs)), dynamicity)
+    save_results(args.log_dir, 'ls2sr_p2_test_{}_cs_{}'.format(args.testset, args.cs), mlu, route_changes)
+    np.save(os.path.join(args.log_dir, 'ls2sr_p2_dyn_test_{}_cs_{}'.format(args.testset, args.cs)), dynamicity)
 
 
 def ls2sr_p2(y_gt, graph, te_step, args):
