@@ -6,8 +6,6 @@ import torch
 
 rd.seed(42)
 
-from .util import largest_indices
-
 from scipy.io import loadmat
 from torch.utils.data import Dataset, DataLoader
 
@@ -285,11 +283,15 @@ def get_dataloader(args):
 
     train, val, test_list = train_test_split(X)
 
-    random_time_step = rd.randint(0, len(train))
-    # get top k biggest
+    # random_time_step = rd.randint(0, len(train))
+    # # get top k biggest
+    #
+    # top_k_index = largest_indices(train[random_time_step], int(args.random_rate / 100 * train.shape[1]))
+    # top_k_index = np.sort(top_k_index)[0]
 
-    top_k_index = largest_indices(train[random_time_step], int(args.random_rate / 100 * train.shape[1]))
-    top_k_index = np.sort(top_k_index)[0]
+    means = np.mean(train, axis=0)
+    top_k_index = np.argsort(means)[::-1]
+    top_k_index = top_k_index[:int(args.random_rate * train.shape[1] / 100)]
 
     if args.top_k_random:
         top_k_index = np.random.randint(X.shape[1], size=top_k_index.shape[0])
