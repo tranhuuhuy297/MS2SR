@@ -313,11 +313,17 @@ def data_preprocessing(data, args):
     n_mflows = int(args.random_rate * 100 / n_series)
     len_x = args.seq_len_x
     for i in range(0, n_timesteps, skip):
+        c_topk_indx, p_topk_idx = np.empty(0), np.empty(0)
+
         for t in range(i, n_timesteps, len_x):
-            traffic = X[t:t + len_x]
-            means = np.mean(train, axis=0)
-            top_k_index = np.argsort(means)[::-1]
-            top_k_index = top_k_index[:int(args.random_rate * train.shape[1] / 100)]
+
+            if c_topk_indx.size == 0:
+                traffic = X[t:t + len_x]
+                means = np.mean(traffic, axis=0)
+                c_topk_indx = np.argsort(means)[::-1]
+                c_topk_indx = c_topk_indx[:n_mflows]
+            else:
+                p_topk_idx = np.copy(c_topk_indx)
 
 
 def train_test_split(X):
