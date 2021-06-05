@@ -212,7 +212,7 @@ def data_preprocessing(data, args, gen_times=5):
     start_idx = 0
     for _ in range(gen_times):
         topk_idx = np.empty(0)
-        for t in range(start_idx, n_timesteps, len_x):
+        for t in range(start_idx, n_timesteps - len_x - len_y, len_x):
             traffic = X[t:t + len_x]
             f_traffic = X[t + len_x: t + len_x + len_y]
 
