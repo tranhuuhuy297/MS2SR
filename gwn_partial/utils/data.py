@@ -229,7 +229,7 @@ def data_preprocessing(data, args, gen_times=5):
                             break
 
             x_topk = traffic[:, topk_idx]
-            x_topk = x_topk.unsqueeze(dim=-1)  # [len_x, k, 1]
+            x_topk = np.expand_dims(x_topk, axis=-1)  # [len_x, k, 1]
             y_topk = np.max(f_traffic, keepdims=True, axis=0)  # [1, k] max of each flow in next routing cycle
 
             # Data for doing traffic engineering
