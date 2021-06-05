@@ -201,8 +201,8 @@ def data_preprocessing(data, args, gen_times=5):
     # if np.isnan(X).any():
     #     raise ValueError('Data has Nan')
 
-    n_mflows = int(args.random_rate * 100 / n_series)
-    n_rand_flows = int(30 * 100 / n_mflows)
+    n_mflows = int(args.random_rate * n_series / 100)
+    n_rand_flows = int(30 * n_mflows / 100)
     len_x = args.seq_len_x
     len_y = args.seq_len_y
 
