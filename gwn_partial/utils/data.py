@@ -287,15 +287,15 @@ def get_mx(X, seq_len_x, n_timeslots, device):
     return mx
 
 
-def data_preprocessing(data, args):
+def data_preprocessing(data, args, gen_times=5):
     n_timesteps, n_series = data.shape
 
     oX = np.copy(data)
-    oX = np2torch(oX, args.device)
+    # oX = np2torch(oX, args.device)
 
     X = granularity(data, args.k)
 
-    X = np2torch(X, args.device)
+    # X = np2torch(X, args.device)
 
     if args.tod:
         tod = get_tod(n_timesteps, n_series, args.day_size, args.device)
@@ -306,24 +306,47 @@ def data_preprocessing(data, args):
     if args.mx:
         mx = get_mx(X, args.seq_len_x, n_timesteps, args.device)
 
-    if torch.isnan(X).any():
+    if np.isnan(X).any():
         raise ValueError('Data has Nan')
 
-    skip = 4
     n_mflows = int(args.random_rate * 100 / n_series)
+    n_rand_flows = int(30 * 100 / n_mflows)
     len_x = args.seq_len_x
-    for i in range(0, n_timesteps, skip):
-        c_topk_indx, p_topk_idx = np.empty(0), np.empty(0)
+    len_y = args.seq_len_y
 
+    data = {}
+    data['Xtopk'] = []
+    data['Ytopk'] = []
+    data['Xgt'] = []
+    data['Ygt'] = []
+
+    skip = 4
+    for i in range(gen_times):
+        topk_indx = np.empty(0)
         for t in range(i, n_timesteps, len_x):
+            traffic = X[t:t + len_x]
+            f_traffic = X[t + len_x: t + len_x + len_y]
 
-            if c_topk_indx.size == 0:
-                traffic = X[t:t + len_x]
+            if topk_indx.size == 0:
                 means = np.mean(traffic, axis=0)
-                c_topk_indx = np.argsort(means)[::-1]
-                c_topk_indx = c_topk_indx[:n_mflows]
+                topk_indx = np.argsort(means)[::-1]
+                topk_indx = topk_indx[:n_mflows]
             else:
-                p_topk_idx = np.copy(c_topk_indx)
+                for _ in range(n_mflows - n_rand_flows, n_mflows, 1):
+                    while True:
+                        rand_idx = np.random.randint(0, n_series)
+                        if rand_idx not in topk_indx:
+                            topk_indx[_] = rand_idx
+                            break
+
+            x_topk = traffic[:, topk_indx]
+            x_topk = x_topk.unsqueeze(dim=-1)  # [len_x, k, 1]
+            y_topk = np.max(f_traffic, keepdims=True, axis=0)  # [1, k] max of each flow in next routing cycle
+
+            data['Xtopk'].append(x_topk)  # [sample, len_x, k, 1]
+            data['Ytopk'].append(y_topk)  # [sample, 1, k]
+
+        i = i + skip
 
 
 def train_test_split(X):
