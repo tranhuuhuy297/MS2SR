@@ -68,7 +68,7 @@ def main(args, **model_kwargs):
     else:
         raise ValueError('Dataset not found!')
 
-    train_loader, val_loader, test_loader, top_k_index = utils.get_dataloader(args)
+    train_loader, val_loader, test_loader = utils.get_dataloader(args)
 
     args.train_size, args.nSeries = train_loader.dataset.nsample, train_loader.dataset.nflows
     args.val_size = val_loader.dataset.nsample
