@@ -5,7 +5,8 @@ from .metric import *
 
 
 class Trainer():
-    def __init__(self, model, scaler, scaler_top_k, lrate, wdecay, clip=3, lr_decay_rate=.97, lossfn='mae'):
+    def __init__(self, model, scaler, scaler_top_k, lrate, wdecay, clip=3, lr_decay_rate=.97, lossfn='mae',
+                 verbose=False):
         self.model = model
 
         self.optimizer = optim.Adam(self.model.parameters(), lr=lrate, weight_decay=wdecay)
@@ -26,23 +27,30 @@ class Trainer():
         else:
             raise ValueError('Loss fn not found!')
 
+        self.verbose = verbose
+
     @classmethod
     def from_args(cls, model, scaler, scaler_top_k, args):
         return cls(model, scaler, scaler_top_k, args.learning_rate, args.weight_decay, clip=args.clip,
-                   lr_decay_rate=args.lr_decay_rate, lossfn=args.loss_fn)
+                   lr_decay_rate=args.lr_decay_rate, lossfn=args.loss_fn, verbose=args.verbose)
 
-    def train(self, input, real_val):
+    def train(self, x, y):
         self.model.train()
         self.optimizer.zero_grad()
         # input = torch.nn.functional.pad(input, (1, 0, 0, 0))
 
-        output = self.model(input)  # now, output = [bs, seq_y, n]
+        output = self.model(x)  # now, output = [bs, seq_y, n]
         # predict = self.scaler.inverse_transform(output)
         if self.scaler_top_k is not None:
             output = self.scaler_top_k.inverse_transform(output)
 
-        loss = self.lossfn(output, real_val)
-        rse, mae, mse, mape, rmse = calc_metrics(output, real_val)
+        if self.verbose:
+            print('x: ', x.shape)
+            print('y: ', y.shape)
+            print('out: ', output.shape)
+
+        loss = self.lossfn(output, y)
+        rse, mae, mse, mape, rmse = calc_metrics(output, y)
         loss.backward()
 
         if self.clip is not None:

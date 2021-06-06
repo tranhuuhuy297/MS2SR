@@ -55,7 +55,7 @@ def get_args():
     parser.add_argument('--skip_channels', type=int, default=64, help='inputs dimension')
     parser.add_argument('--end_channels', type=int, default=128, help='inputs dimension')
 
-    parser.add_argument('--blocks', type=int, default=3, help='')
+    parser.add_argument('--blocks', type=int, default=4, help='')
     parser.add_argument('--layers', type=int, default=2, help='')
     parser.add_argument('--hidden', type=int, default=32, help='Number of channels for internal conv')
     parser.add_argument('--kernel_size', type=int, default=2, help='kernel_size for internal conv')
@@ -95,9 +95,6 @@ def get_args():
 
     # get args
     args = parser.parse_args()
-
-    if args.seq_len_x <= 45:
-        args.blocks = 3
 
     if args.type == 'p1':
         args.out_seq_len = args.seq_len_y

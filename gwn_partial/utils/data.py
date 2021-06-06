@@ -232,7 +232,8 @@ def data_preprocessing(data, args, gen_times=5):
 
             x_topk = traffic[:, topk_idx]
             x_topk = np.expand_dims(x_topk, axis=-1)  # [len_x, k, 1]
-            y_topk = np.max(f_traffic, keepdims=True, axis=0)  # [1, k] max of each flow in next routing cycle
+            y_topk = np.max(f_traffic[:, topk_idx], keepdims=True,
+                            axis=0)  # [1, k] max of each flow in next routing cycle
 
             # Data for doing traffic engineering
             x_gt = oX[t * args.k:(t + len_x) * args.k]  # Original X, in case of scaling data
@@ -351,4 +352,4 @@ def get_dataloader(args):
                              batch_size=args.test_batch_size,
                              shuffle=False)
 
-    return train_loader, val_loader, test_loader, (total_timesteps, total_series)
+    return train_loader, val_loader, test_loader, total_timesteps, total_series
