@@ -116,15 +116,12 @@ def main(args, **model_kwargs):
 
             for epoch in iterator:
                 train_loss, train_rse, train_mae, train_mse, train_mape, train_rmse = [], [], [], [], [], []
-                for iter, batch in enumerate(train_loader):
-
-                    # x = batch['x']  # [b, seq_x, n, f]
-                    # y = batch['y']  # [b, seq_y, n]
-                    # sys.exit()
+                for iteration, batch in enumerate(train_loader):
                     x = batch['x_top_k']
                     y = batch['y_top_k']
 
-                    if y.max() == 0: continue
+                    if y.max() == 0:
+                        continue
                     loss, rse, mae, mse, mape, rmse = engine.train(x, y)
                     train_loss.append(loss)
                     train_rse.append(rse)
@@ -196,27 +193,20 @@ def main(args, **model_kwargs):
         # np.save('psi.npy', psi.matrix)
 
         # traffic reconstruction using compressive sensing
-        A = np.dot(phi, psi.matrix)
         for i in range(y_cs.shape[0]):
+            A = np.dot(phi[i], psi.matrix)
             sparse = Solver_l0(A, max_iter=100, sparsity=int(args.random_rate / 100 * y_cs.shape[-1])).fit(yhat[i].T)
             y_cs[i] = np.dot(psi.matrix, sparse).T
-
-        # y_cs[:, :, top_k_index] = yhat
 
     else:
         print('|--- No traffic reconstruction')
         y_cs = np.zeros(shape=(ygt_shape[0], 1, ygt_shape[-1]))
-        y_cs[:, :, top_k_index] = yhat
+        for i in range(ygt_shape[0]):
+            y_cs[i, :, topk_index[i]] = yhat
 
-    # x_gt = torch.from_numpy(x_gt).to(args.device)
-    # y_gt = torch.from_numpy(y_gt).to(args.device)
-    # y_cs = torch.from_numpy(y_cs).to(args.device)
     y_cs[y_cs < 0.0] = 0.0
 
     if args.run_te != 'None':
-        # x_gt = x_gt.cpu().data.numpy()  # [timestep, seq_x, seq_y]
-        # y_gt = y_gt.cpu().data.numpy()
-        # y_cs = y_cs.cpu().data.numpy()
         run_te(x_gt, y_gt, y_cs, args)
 
 
