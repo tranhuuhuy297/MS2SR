@@ -89,6 +89,7 @@ class PartialTrafficDataset(Dataset):
         self.Ytopk = self.np2torch(dataset['Ytopk'])
         self.Xgt = self.np2torch(dataset['Xgt'])
         self.Ygt = self.np2torch(dataset['Ygt'])
+        self.Topkindex = self.np2torch(dataset['Topkindex'])
 
         self.nsample, self.len_x, self.nflows, self.nfeatures = self.Xtopk.shape
 
@@ -105,7 +106,8 @@ class PartialTrafficDataset(Dataset):
         y_top_k = self.Ytopk[t]
         xgt = self.Xgt[t]
         ygt = self.Ygt[t]
-        sample = {'x_top_k': x_top_k, 'y_top_k': y_top_k, 'x_gt': xgt, 'y_gt': ygt}
+        topk_index = self.Topkindex[t]
+        sample = {'x_top_k': x_top_k, 'y_top_k': y_top_k, 'x_gt': xgt, 'y_gt': ygt, 'topk_index': topk_index}
         return sample
 
     # def transform(self, X):
@@ -206,7 +208,7 @@ def data_preprocessing(data, args, gen_times=5):
     len_x = args.seq_len_x
     len_y = args.seq_len_y
 
-    dataset = {'Xtopk': [], 'Ytopk': [], 'Xgt': [], 'Ygt': []}
+    dataset = {'Xtopk': [], 'Ytopk': [], 'Xgt': [], 'Ygt': [], 'Topkindex': []}
 
     skip = 4
     start_idx = 0
@@ -240,6 +242,7 @@ def data_preprocessing(data, args, gen_times=5):
             dataset['Ytopk'].append(y_topk)  # [sample, 1, k]
             dataset['Xgt'].append(x_gt)
             dataset['Ygt'].append(y_gt)
+            dataset['Topkindex'].append(np.copy(topk_idx))
 
         start_idx = start_idx + skip
 
@@ -247,6 +250,13 @@ def data_preprocessing(data, args, gen_times=5):
     dataset['Ytopk'] = np.stack(dataset['Ytopk'], axis=0)
     dataset['Xgt'] = np.stack(dataset['Xgt'], axis=0)
     dataset['Ygt'] = np.stack(dataset['Ygt'], axis=0)
+    dataset['Topkindex'] = np.stack(dataset['Topkindex'], axis=0)
+
+    print('   Xtopk: ', dataset['Xtopk'].shape)
+    print('   Ytopk: ', dataset['Ytopk'].shape)
+    print('   Xgt: ', dataset['Xgt'].shape)
+    print('   Ygt: ', dataset['Ygt'].shape)
+    print('   Topkindex: ', dataset['Topkindex'].shape)
 
     return dataset
 
@@ -279,6 +289,8 @@ def train_test_split(X):
 
 
 def get_dataloader(args):
+    X = load_raw(args)
+    total_timesteps, total_series = X.shape
     # loading data
     if not os.path.exists(os.path.join(args.datapath, 'pdata/')):
         os.makedirs(os.path.join(args.datapath, 'pdata/'))
@@ -288,13 +300,14 @@ def get_dataloader(args):
     saved_test_path = os.path.join(args.datapath, 'pdata/{}_test.pkl'.format(args.dataset))
     if not os.path.exists(saved_train_path):
 
-        X = load_raw(args)
         train, val, test_list = train_test_split(X)
+        print('Data preprocessing: TRAINSET')
         trainset = data_preprocessing(train, args, gen_times=5)
         with open(saved_train_path, 'wb') as fp:
             pickle.dump(trainset, fp, protocol=pickle.HIGHEST_PROTOCOL)
             fp.close()
 
+        print('Data preprocessing: VALSET')
         valset = data_preprocessing(val, args, gen_times=5)
         with open(saved_val_path, 'wb') as fp:
             pickle.dump(valset, fp, protocol=pickle.HIGHEST_PROTOCOL)
@@ -302,6 +315,7 @@ def get_dataloader(args):
 
         testset_list = []
         for i in range(len(test_list)):
+            print('Data preprocessing: TESTSET {}'.format(i))
             testset = data_preprocessing(test_list[i], args, gen_times=1)
             testset_list.append(testset)
 
@@ -309,6 +323,7 @@ def get_dataloader(args):
             pickle.dump(testset_list, fp, protocol=pickle.HIGHEST_PROTOCOL)
             fp.close()
     else:
+        print('Load saved dataset from {}'.format(os.path.join(args.datapath, 'pdata/')))
         with open(saved_train_path, 'rb') as fp:
             trainset = pickle.load(fp)
             fp.close()
@@ -336,4 +351,4 @@ def get_dataloader(args):
                              batch_size=args.test_batch_size,
                              shuffle=False)
 
-    return train_loader, val_loader, test_loader
+    return train_loader, val_loader, test_loader, (total_timesteps, total_series)

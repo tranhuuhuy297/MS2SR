@@ -71,6 +71,7 @@ class Trainer():
         y_real_top_k = []
         x_gt = []
         y_gt = []
+        topk_index = []
         for _, batch in enumerate(test_loader):
 
             x_top_k = batch['x_top_k']
@@ -79,12 +80,13 @@ class Trainer():
             preds_top_k = model(x_top_k)
             if self.scaler_top_k is not None:
                 preds_top_k = self.scaler_top_k.inverse_transform(preds_top_k)
+
             outputs.append(preds_top_k)
             y_real_top_k.append(y_top_k)
 
-            # y_real.append(y)
             x_gt.append(batch['x_gt'])
             y_gt.append(batch['y_gt'])
+            topk_index.append(batch['topk_index'])
 
         yhat = torch.cat(outputs, dim=0)
         y_real_top_k = torch.cat(y_real_top_k, dim=0)
@@ -100,7 +102,7 @@ class Trainer():
             real = y_real_top_k[:, i, :]
             test_met.append([x.item() for x in calc_metrics(pred, real)])
         test_met_df = pd.DataFrame(test_met, columns=['rse', 'mae', 'mse', 'mape', 'rmse']).rename_axis('t')
-        return test_met_df, x_gt, y_gt, yhat
+        return test_met_df, x_gt, y_gt, yhat, topk_index
 
     def eval(self, val_loader):
         """Run validation."""

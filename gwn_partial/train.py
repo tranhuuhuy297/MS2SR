@@ -24,12 +24,12 @@ warnings.filterwarnings("ignore", category=UserWarning)
 def get_psi(args, samples=10000, iterator=100):
     X = utils.load_raw(args)
 
-    if (X.shape[0] < 10000): samples = 4000
+    if X.shape[0] < 10000:
+        samples = 4000
 
     X = X[:samples, :]
 
-    X_temp = np.array([np.max(X[args.seq_len_x + i: \
-                                args.seq_len_x + i + args.seq_len_y], axis=0) for i in
+    X_temp = np.array([np.max(X[args.seq_len_x + i: args.seq_len_x + i + args.seq_len_y], axis=0) for i in
                        range(samples - args.seq_len_x - args.seq_len_y)]).T
 
     size_D = int(math.sqrt(X.shape[1]))
@@ -40,14 +40,20 @@ def get_psi(args, samples=10000, iterator=100):
     return psi
 
 
-def get_phi(args, top_k_index):
-    X = utils.load_raw(args)
-    G = np.zeros((top_k_index.shape[0], X.shape[1]))
+def get_phi(top_k_index, nseries):
+    phi = []
 
-    for i, j in enumerate(G):
-        j[top_k_index[i]] = 1
+    for k in range(top_k_index.shape[0]):
+        G = np.zeros((top_k_index.shape[0], nseries))
 
-    return G
+        for i, j in enumerate(G):
+            j[top_k_index[i]] = 1
+
+        phi.append(G)
+
+    phi = np.stack(phi, axis=0)
+
+    return phi
 
 
 def main(args, **model_kwargs):
@@ -68,7 +74,7 @@ def main(args, **model_kwargs):
     else:
         raise ValueError('Dataset not found!')
 
-    train_loader, val_loader, test_loader = utils.get_dataloader(args)
+    train_loader, val_loader, test_loader, total_timesteps, total_series = utils.get_dataloader(args)
 
     args.train_size, args.nSeries = train_loader.dataset.nsample, train_loader.dataset.nflows
     args.val_size = val_loader.dataset.nsample
@@ -150,7 +156,7 @@ def main(args, **model_kwargs):
     # Metrics on test data
     engine.model.load_state_dict(torch.load(logger.best_model_save_path))
     with torch.no_grad():
-        test_met_df, x_gt, y_gt, yhat = engine.test(test_loader, engine.model, args.out_seq_len)
+        test_met_df, x_gt, y_gt, yhat, topk_index = engine.test(test_loader, engine.model, args.out_seq_len)
         test_met_df.round(6).to_csv(os.path.join(logger.log_dir, 'test_metrics.csv'))
         print('Prediction Accuracy:')
         print(utils.summary(logger.log_dir))
@@ -170,7 +176,9 @@ def main(args, **model_kwargs):
             print('|--- Calculating psi, phi')
 
             psi = get_psi(args)
-            phi = get_phi(args, top_k_index)
+            phi = get_phi(topk_index, total_series)
+            print('Psi: ', psi.shape)
+            print('Phi: ', phi.shape)
             obj = {
                 'psi': psi,
                 'phi': phi
@@ -184,7 +192,8 @@ def main(args, **model_kwargs):
                 obj = pickle.load(fp)
             psi = obj['psi']
             phi = obj['phi']
-        np.save('psi.npy', psi.matrix)
+
+        # np.save('psi.npy', psi.matrix)
 
         # traffic reconstruction using compressive sensing
         A = np.dot(phi, psi.matrix)
