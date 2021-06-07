@@ -250,6 +250,87 @@ def load_raw(args):
     return X
 
 
+def data_preprocessing(data, args, gen_times=5):
+    n_timesteps, n_series = data.shape
+
+    oX = np.copy(data)
+    # oX = np2torch(oX, args.device)
+
+    X = granularity(data, args.k)
+
+    # X = np2torch(X, args.device)
+
+    # if args.tod:
+    #     tod = get_tod(n_timesteps, n_series, args.day_size, args.device)
+    #
+    # if args.ma:
+    #     ma = get_ma(X, args.seq_len_x, n_timesteps, args.device)
+    #
+    # if args.mx:
+    #     mx = get_mx(X, args.seq_len_x, n_timesteps, args.device)
+    #
+    # if np.isnan(X).any():
+    #     raise ValueError('Data has Nan')
+
+    n_mflows = int(args.random_rate * n_series / 100)
+    n_rand_flows = int(30 * n_mflows / 100)
+    len_x = args.seq_len_x
+    len_y = args.seq_len_y
+
+    dataset = {'Xtopk': [], 'Ytopk': [], 'Xgt': [], 'Ygt': [], 'Topkindex': []}
+
+    skip = 4
+    start_idx = 0
+    for _ in range(gen_times):
+        topk_idx = np.empty(0)
+        for t in range(start_idx, n_timesteps - len_x - len_y, len_x):
+            traffic = X[t:t + len_x]
+            f_traffic = X[t + len_x: t + len_x + len_y]
+
+            if topk_idx.size == 0:
+                means = np.mean(traffic, axis=0)
+                topk_idx = np.argsort(means)[::-1]
+                topk_idx = topk_idx[:n_mflows]
+            else:
+                for i in range(n_mflows - n_rand_flows, n_mflows, 1):
+                    while True:
+                        rand_idx = np.random.randint(0, n_series)
+                        if rand_idx not in topk_idx:
+                            topk_idx[i] = rand_idx
+                            break
+
+            x_topk = traffic[:, topk_idx]
+            x_topk = np.expand_dims(x_topk, axis=-1)  # [len_x, k, 1]
+            y_topk = np.max(f_traffic[:, topk_idx], keepdims=True,
+                            axis=0)  # [1, k] max of each flow in next routing cycle
+
+            # Data for doing traffic engineering
+            x_gt = oX[t * args.k:(t + len_x) * args.k]  # Original X, in case of scaling data
+            y_gt = oX[(t + len_x) * args.k: (t + len_x + len_y) * args.k]  # Original Y, in case of scaling data
+
+            dataset['Xtopk'].append(x_topk)  # [sample, len_x, k, 1]
+            dataset['Ytopk'].append(y_topk)  # [sample, 1, k]
+            dataset['Xgt'].append(x_gt)
+            dataset['Ygt'].append(y_gt)
+            dataset['Topkindex'].append(np.copy(topk_idx))
+
+        start_idx = start_idx + skip
+
+    dataset['Xtopk'] = np.stack(dataset['Xtopk'], axis=0)
+    dataset['Ytopk'] = np.stack(dataset['Ytopk'], axis=0)
+    dataset['Xgt'] = np.stack(dataset['Xgt'], axis=0)
+    dataset['Ygt'] = np.stack(dataset['Ygt'], axis=0)
+    dataset['Topkindex'] = np.stack(dataset['Topkindex'], axis=0)
+
+    print('   Xtopk: ', dataset['Xtopk'].shape)
+    print('   Ytopk: ', dataset['Ytopk'].shape)
+    print('   Xgt: ', dataset['Xgt'].shape)
+    print('   Ygt: ', dataset['Ygt'].shape)
+    print('   Topkindex: ', dataset['Topkindex'].shape)
+
+    return dataset
+
+
 def train_test_split(X):
     train_size = int(X.shape[0] * 0.5)
     val_size = int(X.shape[0] * 0.1)

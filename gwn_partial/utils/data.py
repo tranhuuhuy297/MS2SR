@@ -293,12 +293,15 @@ def get_dataloader(args):
     X = load_raw(args)
     total_timesteps, total_series = X.shape
     # loading data
-    if not os.path.exists(os.path.join(args.datapath, 'pdata/')):
-        os.makedirs(os.path.join(args.datapath, 'pdata/'))
 
-    saved_train_path = os.path.join(args.datapath, 'pdata/{}_train.pkl'.format(args.dataset))
-    saved_val_path = os.path.join(args.datapath, 'pdata/{}_val.pkl'.format(args.dataset))
-    saved_test_path = os.path.join(args.datapath, 'pdata/{}_test.pkl'.format(args.dataset))
+    stored_path = os.path.join(args.datapath, 'pdata/{}_{}_{}_{}/'.format(args.dataset, args.seq_len_x,
+                                                                          args.seq_len_y, args.random_rate))
+    if not os.path.exists(stored_path):
+        os.makedirs(stored_path)
+
+    saved_train_path = os.path.join(stored_path, 'train.pkl')
+    saved_val_path = os.path.join(stored_path, 'val.pkl')
+    saved_test_path = os.path.join(stored_path, 'test.pkl')
     if not os.path.exists(saved_train_path):
 
         train, val, test_list = train_test_split(X)
@@ -324,7 +327,7 @@ def get_dataloader(args):
             pickle.dump(testset_list, fp, protocol=pickle.HIGHEST_PROTOCOL)
             fp.close()
     else:
-        print('Load saved dataset from {}'.format(os.path.join(args.datapath, 'pdata/')))
+        print('Load saved dataset from {}'.format(stored_path))
         with open(saved_train_path, 'rb') as fp:
             trainset = pickle.load(fp)
             fp.close()
