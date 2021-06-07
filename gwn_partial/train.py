@@ -160,6 +160,7 @@ def main(args, **model_kwargs):
 
     x_gt = x_gt.cpu().data.numpy()  # [timestep, seq_x, seq_y]
     y_gt = y_gt.cpu().data.numpy()
+    topk_index = topk_index.cpu().data.numpy()
     yhat = yhat.cpu().data.numpy()
 
     ygt_shape = y_gt.shape
