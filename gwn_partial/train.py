@@ -44,10 +44,10 @@ def get_phi(top_k_index, nseries):
     phi = []
 
     for k in range(top_k_index.shape[0]):
-        G = np.zeros((top_k_index.shape[0], nseries))
+        G = np.zeros((top_k_index.shape[1], nseries))
 
         for i, j in enumerate(G):
-            j[top_k_index[i]] = 1
+            j[top_k_index[k, i]] = 1
 
         phi.append(G)
 
@@ -184,13 +184,17 @@ def main(args, **model_kwargs):
             }
             with open(path_psi_phi, 'wb') as fp:
                 pickle.dump(obj, fp, protocol=pickle.HIGHEST_PROTOCOL)
+                fp.close()
         else:
             print('|--- Loading psi, phi from {}'.format(path_psi_phi))
 
             with open(path_psi_phi, 'rb') as fp:
                 obj = pickle.load(fp)
+                fp.close()
             psi = obj['psi']
-            phi = obj['phi']
+            phi = get_phi(topk_index, total_series)
+            print('psi: ', psi.matrix.shape)
+            print('phi: ', phi.shape)
 
         # np.save('psi.npy', psi.matrix)
 

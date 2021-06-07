@@ -250,15 +250,39 @@ def load_raw(args):
     return X
 
 
-def data_preprocessing(data, args, gen_times=5):
+def np2torch(X, device):
+    X = torch.Tensor(X)
+    if torch.cuda.is_available():
+        X = X.to(device)
+    return X
+
+
+def data_preprocessing(data, topk_index, args, gen_times=5, scaler=None, scaler_top_k=None):
     n_timesteps, n_series = data.shape
 
     oX = np.copy(data)
-    # oX = np2torch(oX, args.device)
+    oX = np2torch(oX, args.device)
 
     X = granularity(data, args.k)
 
-    # X = np2torch(X, args.device)
+    X_top_k = np.copy(X[:, topk_index])
+    X = np2torch(X, args.device)
+    X_top_k = np2torch(X_top_k, args.device)
+
+    if scaler is None:
+        scaler = StandardScaler_torch()
+        scaler.fit(X)
+    else:
+        scaler = scaler
+
+    if scaler_top_k is None:
+        scaler_top_k = StandardScaler_torch()
+        scaler_top_k.fit(X_top_k)
+    else:
+        scaler_top_k = scaler_top_k
+
+    X_scaled = scaler.transform(X)
+    X_scaled_top_k = scaler_top_k.transform(X_top_k)
 
     # if args.tod:
     #     tod = get_tod(n_timesteps, n_series, args.day_size, args.device)
@@ -272,8 +296,6 @@ def data_preprocessing(data, args, gen_times=5):
     # if np.isnan(X).any():
     #     raise ValueError('Data has Nan')
 
-    n_mflows = int(args.random_rate * n_series / 100)
-    n_rand_flows = int(30 * n_mflows / 100)
     len_x = args.seq_len_x
     len_y = args.seq_len_y
 
