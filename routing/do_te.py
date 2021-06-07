@@ -664,6 +664,7 @@ def run_te(x_gt, y_gt, yhat, args):
     # x_gt, y_gt, yhat = prepare_te_data(x_gt, y_gt, yhat, args)
 
     te_step = x_gt.shape[0]
+    print('Run {} TE steps'.format(te_step))
     print('    Method           |   Min     Avg    Max     std')
 
     if args.run_te == 'ls2sr':

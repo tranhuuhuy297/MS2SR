@@ -203,8 +203,9 @@ def main(args, **model_kwargs):
     else:
         print('|--- No traffic reconstruction')
         y_cs = np.zeros(shape=(ygt_shape[0], 1, ygt_shape[-1]))
+
         for i in range(ygt_shape[0]):
-            y_cs[i, :, topk_index[i]] = yhat
+            y_cs[i, 0, topk_index[i]] = yhat[i]
 
     y_cs[y_cs < 0.0] = 0.0
 
