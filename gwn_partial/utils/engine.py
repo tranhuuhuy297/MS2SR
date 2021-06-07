@@ -100,6 +100,7 @@ class Trainer():
         y_real_top_k = torch.cat(y_real_top_k, dim=0)
         x_gt = torch.cat(x_gt, dim=0)
         y_gt = torch.cat(y_gt, dim=0)
+        topk_index = torch.cat(topk_index, dim=0)
         test_met = []
 
         yhat[yhat < 0.0] = 0.0
