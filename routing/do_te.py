@@ -661,7 +661,7 @@ def run_te(x_gt, y_gt, yhat, args):
     print('|--- run TE on DIRECTED graph')
     graph = load_network_topology(args.dataset, args.datapath)
 
-    x_gt, y_gt, yhat = prepare_te_data(x_gt, y_gt, yhat, args)
+    # x_gt, y_gt, yhat = prepare_te_data(x_gt, y_gt, yhat, args)
 
     te_step = x_gt.shape[0]
     print('    Method           |   Min     Avg    Max     std')
