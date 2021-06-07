@@ -205,6 +205,7 @@ def main(args, **model_kwargs):
         print(topk_index.shape)
         print(topk_index.dtype)
         for i in range(ygt_shape[0]):
+            print(topk_index[i])
             y_cs[i, :, topk_index[i]] = yhat
 
     y_cs[y_cs < 0.0] = 0.0
