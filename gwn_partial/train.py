@@ -161,6 +161,7 @@ def main(args, **model_kwargs):
     x_gt = x_gt.cpu().data.numpy()  # [timestep, seq_x, seq_y]
     y_gt = y_gt.cpu().data.numpy()
     topk_index = topk_index.cpu().data.numpy()
+    topk_index = topk_index.astype(dtype=np.int)
     yhat = yhat.cpu().data.numpy()
 
     ygt_shape = y_gt.shape
@@ -202,10 +203,7 @@ def main(args, **model_kwargs):
     else:
         print('|--- No traffic reconstruction')
         y_cs = np.zeros(shape=(ygt_shape[0], 1, ygt_shape[-1]))
-        print(topk_index.shape)
-        print(topk_index.dtype)
         for i in range(ygt_shape[0]):
-            print(topk_index[i])
             y_cs[i, :, topk_index[i]] = yhat
 
     y_cs[y_cs < 0.0] = 0.0
