@@ -1,17 +1,17 @@
+import pickle
+
 import numpy as np
 
+a = np.random.randint(0, 1000, (1000, 1000))
+# b = torch.Tensor(a).to('cuda:0')
+#
+# with open('test.pkl', 'wb') as fp:
+#     pickle.dump(b, fp, protocol=pickle.HIGHEST_PROTOCOL)
+#     fp.close()
 
-def get_phi(top_k_index):
-    G = np.zeros((top_k_index.shape[0], 20))
+with open('test.pkl', 'rb') as fp:
+    c = pickle.load(fp)
+    fp.close()
 
-    for i, j in enumerate(G):
-        j[top_k_index[i]] = 1
-
-    return G
-
-
-top_k_index = np.array([1, 5, 7, 9, 15])
-
-phi = get_phi(top_k_index)
-print(phi.shape)
-print(phi)
+print(c.get_device())
+print(c.is_cuda)

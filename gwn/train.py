@@ -9,7 +9,6 @@ import torch
 import utils
 from tqdm import trange
 from routing import *
-from utils import *
 from dictionary import DCTDictionary
 from ksvd import KSVD
 from pursuit import MatchingPursuit, Solver_l0
@@ -70,11 +69,11 @@ def main(args, **model_kwargs):
     else:
         raise ValueError('Dataset not found!')
 
-    train_loader, val_loader, test_loader, top_k_index = utils.get_dataloader(args)
+    train_loader, val_loader, test_loader, total_timesteps, total_series = utils.get_dataloader(args)
 
-    args.train_size, args.nSeries = train_loader.dataset.X_scaled_top_k.shape
-    args.val_size = val_loader.dataset.X_scaled_top_k.shape[0]
-    args.test_size = test_loader.dataset.X_scaled_top_k.shape[0]
+    args.train_size, args.nSeries = train_loader.dataset.nsample, train_loader.dataset.nflows
+    args.val_size = val_loader.dataset.nsample
+    args.test_size = test_loader.dataset.nsample
 
     in_dim = 1
     if args.tod:
@@ -92,7 +91,7 @@ def main(args, **model_kwargs):
     model.to(device)
     logger = utils.Logger(args)
 
-    engine = utils.Trainer.from_args(model, train_loader.dataset.scaler, train_loader.dataset.scaler_top_k, args)
+    engine = utils.Trainer.from_args(model, None, train_loader.dataset.scaler_topk, args)
 
     utils.print_args(args)
 
@@ -152,18 +151,15 @@ def main(args, **model_kwargs):
     # Metrics on test data
     engine.model.load_state_dict(torch.load(logger.best_model_save_path))
     with torch.no_grad():
-        test_met_df, x_gt, y_gt, y_real, yhat = engine.test(test_loader, engine.model, args.out_seq_len)
+        test_met_df, x_gt, y_gt, yhat = engine.test(test_loader, engine.model, args.out_seq_len)
         test_met_df.round(6).to_csv(os.path.join(logger.log_dir, 'test_metrics.csv'))
         print('Prediction Accuracy:')
         print(utils.summary(logger.log_dir))
 
-    if args.plot:
-        logger.plot(x_gt, y_real, yhat)
-
     x_gt = x_gt.cpu().data.numpy()  # [timestep, seq_x, seq_y]
     y_gt = y_gt.cpu().data.numpy()
     yhat = yhat.cpu().data.numpy()
-
+    top_k_index = test_loader.dataset.Topkindex
     ygt_shape = y_gt.shape
     if args.cs:
         print('|--- Traffic reconstruction using CS')
@@ -197,33 +193,14 @@ def main(args, **model_kwargs):
             sparse = Solver_l0(A, max_iter=100, sparsity=int(args.random_rate / 100 * y_cs.shape[-1])).fit(yhat[i].T)
             y_cs[i] = np.dot(psi.matrix, sparse).T
 
-        # y_cs[:, :, top_k_index] = yhat
-
     else:
         print('|--- No traffic reconstruction')
         y_cs = np.zeros(shape=(ygt_shape[0], 1, ygt_shape[-1]))
         y_cs[:, :, top_k_index] = yhat
 
-    x_gt = torch.from_numpy(x_gt).to(args.device)
-    y_gt = torch.from_numpy(y_gt).to(args.device)
-    y_cs = torch.from_numpy(y_cs).to(args.device)
     y_cs[y_cs < 0] = 0
-    test_met = []
-    for i in range(y_cs.shape[1]):
-        pred = y_cs[:, i, :]
-        pred = torch.clamp(pred, min=0., max=10e10)
-        real = y_real[:, i, :]
-        test_met.append([x.item() for x in calc_metrics(pred, real)])
-    test_met_df = pd.DataFrame(test_met, columns=['rse', 'mae', 'mse', 'mape', 'rmse']).rename_axis('t')
-    test_met_df.round(6).to_csv(os.path.join(logger.log_dir, 'test_metrics.csv'))
-    print('Prediction Accuracy:')
-    print(utils.summary(logger.log_dir))
 
     if args.run_te != 'None':
-        x_gt = x_gt.cpu().data.numpy()  # [timestep, seq_x, seq_y]
-        y_gt = y_gt.cpu().data.numpy()
-        y_cs = y_cs.cpu().data.numpy()
-
         run_te(x_gt, y_gt, y_cs, args)
 
 

@@ -67,29 +67,23 @@ class Trainer():
         model.eval()
         outputs = []
         y_real_top_k = []
-        y_real = []
         x_gt = []
         y_gt = []
         for _, batch in enumerate(test_loader):
-            # x = batch['x']  # [b, seq_x, n, f]
-            # y = batch['y']  # [b, seq_y, n]
 
             x_top_k = batch['x_top_k']
             y_top_k = batch['y_top_k']
-            y = batch['y']
 
             preds_top_k = model(x_top_k)
             preds_top_k = self.scaler_top_k.inverse_transform(preds_top_k)
             outputs.append(preds_top_k)
             y_real_top_k.append(y_top_k)
 
-            y_real.append(y)
             x_gt.append(batch['x_gt'])
             y_gt.append(batch['y_gt'])
 
         yhat = torch.cat(outputs, dim=0)
         y_real_top_k = torch.cat(y_real_top_k, dim=0)
-        y_real = torch.cat(y_real, dim=0)
         x_gt = torch.cat(x_gt, dim=0)
         y_gt = torch.cat(y_gt, dim=0)
         test_met = []
@@ -102,7 +96,7 @@ class Trainer():
             real = y_real_top_k[:, i, :]
             test_met.append([x.item() for x in calc_metrics(pred, real)])
         test_met_df = pd.DataFrame(test_met, columns=['rse', 'mae', 'mse', 'mape', 'rmse']).rename_axis('t')
-        return test_met_df, x_gt, y_gt, y_real, yhat
+        return test_met_df, x_gt, y_gt, yhat
 
     def eval(self, val_loader):
         """Run validation."""

@@ -89,8 +89,8 @@ class PartialTrafficDataset(Dataset):
         self.Ytopk = self.np2torch(dataset['Ytopk'])
         self.Xgt = self.np2torch(dataset['Xgt'])
         self.Ygt = self.np2torch(dataset['Ygt'])
-        self.Topkindex = self.np2torch(dataset['Topkindex'])
-        self.scaler_topk = self.np2torch(dataset['Scaler_topk'])
+        self.Topkindex = dataset['Topkindex']
+        self.scaler_topk = dataset['Scaler_topk']
 
         self.nsample, self.len_x, self.nflows, self.nfeatures = self.Xtopk.shape
 
@@ -316,20 +316,20 @@ def get_dataloader(args):
             fp.close()
 
     # Training set
-    train_set = TrafficDataset(train, args=args, scaler=None, top_k_index=top_k_index)
+    train_set = PartialTrafficDataset(trainset, args=args)
     train_loader = DataLoader(train_set,
                               batch_size=args.train_batch_size,
                               shuffle=True)
 
     # validation set
-    val_set = TrafficDataset(val, args=args, scaler=train_set.scaler, top_k_index=top_k_index)
+    val_set = PartialTrafficDataset(valset, args=args)
     val_loader = DataLoader(val_set,
                             batch_size=args.val_batch_size,
                             shuffle=False)
 
-    test_set = TrafficDataset(test_list[args.testset], args=args, scaler=train_set.scaler, top_k_index=top_k_index)
+    test_set = PartialTrafficDataset(testset_list[args.testset], args=args)
     test_loader = DataLoader(test_set,
                              batch_size=args.test_batch_size,
                              shuffle=False)
 
-    return train_loader, val_loader, test_loader, top_k_index
+    return train_loader, val_loader, test_loader, total_timesteps, total_series
