@@ -47,7 +47,7 @@ def get_args():
     parser.add_argument('--apt_size', default=10, type=int, help='default 10')
 
     # Wavenet
-    parser.add_argument('--seq_len_x', type=int, default=64, help='input length default 64')
+    parser.add_argument('--seq_len_x', type=int, default=12, help='input length default 64')
     parser.add_argument('--seq_len_y', type=int, default=12, help='routing cycle 12')
 
     parser.add_argument('--dilation_channels', type=int, default=32, help='inputs dimension (default 32)')
@@ -55,11 +55,11 @@ def get_args():
     parser.add_argument('--skip_channels', type=int, default=64, help='inputs dimension')
     parser.add_argument('--end_channels', type=int, default=128, help='inputs dimension')
 
-    parser.add_argument('--blocks', type=int, default=5, help='')
+    parser.add_argument('--blocks', type=int, default=4, help='')
     parser.add_argument('--layers', type=int, default=2, help='')
     parser.add_argument('--hidden', type=int, default=32, help='Number of channels for internal conv')
-    parser.add_argument('--kernel_size', type=int, default=4, help='kernel_size for internal conv')
-    parser.add_argument('--stride', type=int, default=4, help='stride for internal conv')
+    parser.add_argument('--kernel_size', type=int, default=2, help='kernel_size for internal conv')
+    parser.add_argument('--stride', type=int, default=2, help='stride for internal conv')
     parser.add_argument('--dropout', type=float, default=0.3, help='dropout rate')
     parser.add_argument('--n_obs', default=None, help='Only use this many observations. For unit testing.')
     parser.add_argument('--cat_feat_gc', action='store_true')
@@ -95,9 +95,6 @@ def get_args():
 
     # get args
     args = parser.parse_args()
-
-    if args.seq_len_x <= 45:
-        args.blocks = 3
 
     if args.type == 'p1':
         args.out_seq_len = args.seq_len_y
