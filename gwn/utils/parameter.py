@@ -85,9 +85,10 @@ def get_args():
     parser.add_argument('--plot', action='store_true')
 
     # parameter for test_routing
-    parser.add_argument('--run_te', type=str,
-                        choices=['None', 'ls2sr', 'p1', 'p0', 'p2', 'p3', 'onestep', 'laststep', 'or'],
-                        default='ls2sr')
+    parser.add_argument('--run_te', type=str, choices=['None', 'gwn_ls2sr', 'gt_ls2sr', 'p0', 'p1', 'p2', 'gwn_p2',
+                                                       'p3', 'onestep', 'prophet', 'laststep', 'laststep_ls2sr',
+                                                       'firststep', 'or'],
+                        default='None')
 
     parser.add_argument('--timeout', type=float, default=10.0)
 
