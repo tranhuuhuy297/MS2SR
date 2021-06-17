@@ -263,8 +263,8 @@ def get_dataloader(args):
     X = load_raw(args)
     total_timesteps, total_series = X.shape
 
-    stored_path = os.path.join(args.datapath, 'pdata/fixed_topk_{}_{}_{}_{}/'.format(args.dataset, args.seq_len_x,
-                                                                                     args.seq_len_y, args.random_rate))
+    stored_path = os.path.join(args.datapath, 'pdata/gwn_cs_{}_{}_{}_{}/'.format(args.dataset, args.seq_len_x,
+                                                                                 args.seq_len_y, args.random_rate))
     if not os.path.exists(stored_path):
         os.makedirs(stored_path)
 

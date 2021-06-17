@@ -294,8 +294,9 @@ def get_dataloader(args):
     total_timesteps, total_series = X.shape
     # loading data
 
-    stored_path = os.path.join(args.datapath, 'pdata/{}_{}_{}_{}/'.format(args.dataset, args.seq_len_x,
-                                                                          args.seq_len_y, args.random_rate))
+    stored_path = os.path.join(args.datapath, 'pdata/gwn_cs_partial_{}_{}_{}_{}/'.format(args.dataset, args.seq_len_x,
+                                                                                         args.seq_len_y,
+                                                                                         args.random_rate))
     if not os.path.exists(stored_path):
         os.makedirs(stored_path)
 
