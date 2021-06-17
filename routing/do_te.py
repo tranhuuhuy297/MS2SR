@@ -212,7 +212,7 @@ def ls2sr_p0(yhat, y_gt, x_gt, G, segments, te_step, args):
     save_results(args.log_dir, 'test_{}_p0_ls2sr'.format(args.testset), mlu, rc)
 
 
-def gwn_ls2sr(yhat, x_gt, y_gt, graph, te_step, args):
+def gwn_ls2sr(yhat, y_gt, graph, te_step, args):
     print('ls2sr_gwn_p2')
 
     results = []
@@ -694,7 +694,7 @@ def run_te(x_gt, y_gt, yhat, args):
     print('    Method           |   Min     Avg    Max     std')
 
     if args.run_te == 'gwn_ls2sr':
-        gwn_ls2sr(yhat, x_gt, y_gt, graph, te_step, args)
+        gwn_ls2sr(yhat, y_gt, graph, te_step, args)
     elif args.run_te == 'gt_ls2sr':
         gt_ls2sr(y_gt, graph, te_step, args)
     elif args.run_te == 'p0':
