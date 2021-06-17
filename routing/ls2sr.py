@@ -279,14 +279,14 @@ class LS2SRSolver:
 
         # initialize solver state
         self.set_link2flow(solution)
-        best_solution = solution
+        best_solution = np.copy(solution)
         u = self.evaluate(solution, tm=tm)
         theta = u
 
         # iteratively solve
         tic = time.time()
         while time.time() - tic < self.timeout:
-            i, j = self.select_flow(tm)
+            i, j = self.select_flow(tm=tm)
             if i == j:
                 continue
             new_path_idx = best_solution[i, j] + 1
