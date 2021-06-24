@@ -69,7 +69,7 @@ class StandardScaler_torch:
 
 def granularity(data, k):
     if k == 1:
-        return data
+        return np.copy(data)
     else:
         newdata = [np.mean(data[i:i + k], axis=0) for i in range(0, data.shape[0], k)]
         newdata = np.asarray(newdata)
@@ -188,20 +188,6 @@ def data_preprocessing(data, args, gen_times=5):
     # oX = np2torch(oX, args.device)
 
     X = granularity(data, args.k)
-
-    # X = np2torch(X, args.device)
-
-    # if args.tod:
-    #     tod = get_tod(n_timesteps, n_series, args.day_size, args.device)
-    #
-    # if args.ma:
-    #     ma = get_ma(X, args.seq_len_x, n_timesteps, args.device)
-    #
-    # if args.mx:
-    #     mx = get_mx(X, args.seq_len_x, n_timesteps, args.device)
-    #
-    # if np.isnan(X).any():
-    #     raise ValueError('Data has Nan')
 
     n_mflows = int(args.random_rate * n_series / 100)
     n_rand_flows = int(30 * n_mflows / 100)

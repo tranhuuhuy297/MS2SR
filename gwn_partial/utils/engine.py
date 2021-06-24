@@ -42,6 +42,7 @@ class Trainer():
         output = self.model(x)  # now, output = [bs, seq_y, n]
         # predict = self.scaler.inverse_transform(output)
         if self.scaler_top_k is not None:
+            print('inverse transform')
             output = self.scaler_top_k.inverse_transform(output)
 
         if self.verbose:
