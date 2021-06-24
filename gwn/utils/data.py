@@ -11,7 +11,7 @@ from scipy.io import loadmat
 from torch.utils.data import Dataset, DataLoader
 
 
-class MinMaxScaler_torch():
+class MinMaxScaler_torch:
 
     def __init__(self, min=None, max=None, device='cuda:0'):
         self.min = min
@@ -30,7 +30,7 @@ class MinMaxScaler_torch():
         return (data * (self.max - self.min + 1e-8)) + self.min
 
 
-class StandardScaler_torch():
+class StandardScaler_torch:
 
     def __init__(self):
         self.means = 0
@@ -69,7 +69,7 @@ class StandardScaler_torch():
 
 def granularity(data, k):
     if k == 1:
-        return data
+        return np.copy(data)
     else:
         newdata = [np.mean(data[i:i + k], axis=0) for i in range(0, data.shape[0], k)]
         newdata = np.asarray(newdata)
