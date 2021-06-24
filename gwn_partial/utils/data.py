@@ -293,13 +293,13 @@ def get_dataloader(args):
 
         train, val, test_list = train_test_split(X)
         print('Data preprocessing: TRAINSET')
-        trainset = data_preprocessing(train, args, gen_times=5)
+        trainset = data_preprocessing(train, args, gen_times=10)
         with open(saved_train_path, 'wb') as fp:
             pickle.dump(trainset, fp, protocol=pickle.HIGHEST_PROTOCOL)
             fp.close()
 
         print('Data preprocessing: VALSET')
-        valset = data_preprocessing(val, args, gen_times=5)
+        valset = data_preprocessing(val, args, gen_times=10)
         with open(saved_val_path, 'wb') as fp:
             pickle.dump(valset, fp, protocol=pickle.HIGHEST_PROTOCOL)
             fp.close()

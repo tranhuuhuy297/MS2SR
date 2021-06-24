@@ -281,14 +281,15 @@ def get_dataloader(args):
             top_k_index = np.random.randint(X.shape[1], size=top_k_index.shape[0])
 
         print('Data preprocessing: TRAINSET')
-        trainset = data_preprocessing(data=train, topk_index=top_k_index, args=args, gen_times=5, scaler_top_k=None)
+        trainset = data_preprocessing(data=train, topk_index=top_k_index, args=args, gen_times=10, scaler_top_k=None)
         train_scaler = trainset['Scaler_topk']
         with open(saved_train_path, 'wb') as fp:
             pickle.dump(trainset, fp, protocol=pickle.HIGHEST_PROTOCOL)
             fp.close()
 
         print('Data preprocessing: VALSET')
-        valset = data_preprocessing(data=val, topk_index=top_k_index, args=args, gen_times=5, scaler_top_k=train_scaler)
+        valset = data_preprocessing(data=val, topk_index=top_k_index, args=args, gen_times=10,
+                                    scaler_top_k=train_scaler)
         with open(saved_val_path, 'wb') as fp:
             pickle.dump(valset, fp, protocol=pickle.HIGHEST_PROTOCOL)
             fp.close()
