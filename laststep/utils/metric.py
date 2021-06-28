@@ -16,7 +16,7 @@ def mse_u(preds, labels, lamda=2.0):
     err = preds - labels
     err[err < 0.0] = err[err < 0.0] * lamda
 
-    return torch.mean(err ** 2)
+    return torch.mean((err) ** 2)
 
 
 def rse(preds, labels):
