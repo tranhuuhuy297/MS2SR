@@ -87,6 +87,7 @@ class PartialTrafficDataset(Dataset):
         self.out_seq_len = args.out_seq_len
         self.Xtopk = self.np2torch(dataset['Xtopk'])
         self.Ytopk = self.np2torch(dataset['Ytopk'])
+        self.Yreal = self.np2torch(dataset['Yreal'])
         self.Xgt = self.np2torch(dataset['Xgt'])
         self.Ygt = self.np2torch(dataset['Ygt'])
         self.Topkindex = dataset['Topkindex']
@@ -105,9 +106,10 @@ class PartialTrafficDataset(Dataset):
 
         x_top_k = self.Xtopk[t]
         y_top_k = self.Ytopk[t]
+        y_real = self.Yreal[t]
         xgt = self.Xgt[t]
         ygt = self.Ygt[t]
-        sample = {'x_top_k': x_top_k, 'y_top_k': y_top_k, 'x_gt': xgt, 'y_gt': ygt}
+        sample = {'x_top_k': x_top_k, 'y_top_k': y_top_k, 'x_gt': xgt, 'y_gt': ygt, 'y_real': y_real}
         return sample
 
     def transform(self, X):
@@ -174,22 +176,11 @@ def data_preprocessing(data, topk_index, args, gen_times=5, scaler_top_k=None):
 
     X_scaled_top_k = scaler_top_k.transform(X_top_k)
 
-    # if args.tod:
-    #     tod = get_tod(n_timesteps, n_series, args.day_size, args.device)
-    #
-    # if args.ma:
-    #     ma = get_ma(X, args.seq_len_x, n_timesteps, args.device)
-    #
-    # if args.mx:
-    #     mx = get_mx(X, args.seq_len_x, n_timesteps, args.device)
-    #
-    # if np.isnan(X).any():
-    #     raise ValueError('Data has Nan')
-
     len_x = args.seq_len_x
     len_y = args.seq_len_y
 
-    dataset = {'Xtopk': [], 'Ytopk': [], 'Xgt': [], 'Ygt': [], 'Topkindex': topk_index, 'Scaler_topk': scaler_top_k}
+    dataset = {'Xtopk': [], 'Ytopk': [], 'Xgt': [], 'Ygt': [], 'Yreal': [],
+               'Topkindex': topk_index, 'Scaler_topk': scaler_top_k}
 
     skip = 4
     start_idx = 0
@@ -201,12 +192,16 @@ def data_preprocessing(data, topk_index, args, gen_times=5, scaler_top_k=None):
             y_topk = torch.max(X_top_k[t + len_x:t + len_x + len_y], dim=0)[0]
             y_topk = y_topk.reshape(1, -1)
 
+            y_real = torch.max(X[t + len_x:t + len_x + len_y], dim=0)[0]
+            y_real = y_real.reshape(1, -1)
+
             # Data for doing traffic engineering
             x_gt = oX[t * args.k:(t + len_x) * args.k]
             y_gt = oX[(t + len_x) * args.k: (t + len_x + len_y) * args.k]
 
             dataset['Xtopk'].append(x_topk)  # [sample, len_x, k, 1]
             dataset['Ytopk'].append(y_topk)  # [sample, 1, k]
+            dataset['Yreal'].append(y_real)  # [sample, 1, k]
             dataset['Xgt'].append(x_gt)
             dataset['Ygt'].append(y_gt)
 
@@ -214,16 +209,19 @@ def data_preprocessing(data, topk_index, args, gen_times=5, scaler_top_k=None):
 
     dataset['Xtopk'] = torch.stack(dataset['Xtopk'], dim=0)
     dataset['Ytopk'] = torch.stack(dataset['Ytopk'], dim=0)
+    dataset['Yreal'] = torch.stack(dataset['Yreal'], dim=0)
     dataset['Xgt'] = torch.stack(dataset['Xgt'], dim=0)
     dataset['Ygt'] = torch.stack(dataset['Ygt'], dim=0)
 
     dataset['Xtopk'] = dataset['Xtopk'].cpu().data.numpy()
     dataset['Ytopk'] = dataset['Ytopk'].cpu().data.numpy()
+    dataset['Yreal'] = dataset['Yreal'].cpu().data.numpy()
     dataset['Xgt'] = dataset['Xgt'].cpu().data.numpy()
     dataset['Ygt'] = dataset['Ygt'].cpu().data.numpy()
 
     print('   Xtopk: ', dataset['Xtopk'].shape)
     print('   Ytopk: ', dataset['Ytopk'].shape)
+    print('   Yreal: ', dataset['Yreal'].shape)
     print('   Xgt: ', dataset['Xgt'].shape)
     print('   Ygt: ', dataset['Ygt'].shape)
     print('   Topkindex: ', dataset['Topkindex'].shape)

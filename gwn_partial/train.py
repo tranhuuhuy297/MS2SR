@@ -150,7 +150,7 @@ def main(args, **model_kwargs):
     # Metrics on test data
     engine.model.load_state_dict(torch.load(logger.best_model_save_path))
     with torch.no_grad():
-        test_met_df, x_gt, y_gt, yhat, topk_index = engine.test(test_loader, engine.model, args.out_seq_len)
+        test_met_df, x_gt, y_gt, yhat, y_real, topk_index = engine.test(test_loader, engine.model, args.out_seq_len)
         test_met_df.round(6).to_csv(os.path.join(logger.log_dir, 'test_metrics.csv'))
         print('Prediction Accuracy:')
         print(utils.summary(logger.log_dir))
@@ -209,6 +209,26 @@ def main(args, **model_kwargs):
             y_cs[i, 0, topk_index[i]] = yhat[i]
 
     y_cs[y_cs < 0.0] = 0.0
+    x_gt = torch.from_numpy(x_gt).to(args.device)
+    y_gt = torch.from_numpy(y_gt).to(args.device)
+    y_cs = torch.from_numpy(y_cs).to(args.device)
+    y_cs[y_cs < 0] = 0
+    test_met = []
+    for i in range(y_cs.shape[1]):
+        pred = y_cs[:, i, :]
+        pred = torch.clamp(pred, min=0., max=10e10)
+        real = y_real[:, i, :]
+        test_met.append([x.item() for x in utils.calc_metrics(pred, real)])
+    test_met_df = pd.DataFrame(test_met, columns=['rse', 'mae', 'mse', 'mape', 'rmse']).rename_axis('t')
+    test_met_df.round(6).to_csv(os.path.join(logger.log_dir, 'test_metrics.csv'))
+    print('Prediction Accuracy:')
+    print(utils.summary(logger.log_dir))
+
+    x_gt = x_gt.cpu().data.numpy()  # [timestep, seq_x, seq_y]
+    y_gt = y_gt.cpu().data.numpy()
+    topk_index = topk_index.cpu().data.numpy()
+    topk_index = topk_index.astype(dtype=np.int)
+    yhat = yhat.cpu().data.numpy()
 
     if args.run_te != 'None':
         run_te(x_gt, y_gt, y_cs, args)
