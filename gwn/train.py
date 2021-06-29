@@ -207,7 +207,7 @@ def main(args, **model_kwargs):
         real = y_real[:, i, :]
         test_met.append([x.item() for x in utils.calc_metrics(pred, real)])
     test_met_df = pd.DataFrame(test_met, columns=['rse', 'mae', 'mse', 'mape', 'rmse']).rename_axis('t')
-    test_met_df.round(6).to_csv(os.path.join(logger.log_dir, 'test_metrics_test_{}.csv'.format(args.testset)))
+    test_met_df.round(6).to_csv(os.path.join(logger.log_dir, 'test_metrics_{}.csv'.format(args.testset)))
     print('Prediction Accuracy:')
     print(utils.summary(logger.log_dir))
 
