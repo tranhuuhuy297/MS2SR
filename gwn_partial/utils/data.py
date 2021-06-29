@@ -242,7 +242,7 @@ def data_preprocessing(data, args, gen_times=5):
 
     dataset['Xtopk'] = np.stack(dataset['Xtopk'], axis=0)
     dataset['Ytopk'] = np.stack(dataset['Ytopk'], axis=0)
-    dataset['Yreal'] = torch.stack(dataset['Yreal'], dim=0)
+    dataset['Yreal'] = np.stack(dataset['Yreal'], axis=0)
     dataset['Xgt'] = np.stack(dataset['Xgt'], axis=0)
     dataset['Ygt'] = np.stack(dataset['Ygt'], axis=0)
     dataset['Topkindex'] = np.stack(dataset['Topkindex'], axis=0)
