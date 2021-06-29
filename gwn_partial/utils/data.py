@@ -208,17 +208,21 @@ def data_preprocessing(data, args, gen_times=5):
             traffic = X[t:t + len_x]
             f_traffic = X[t + len_x: t + len_x + len_y]
 
-            if topk_idx.size == 0:
-                means = np.mean(traffic, axis=0)
-                topk_idx = np.argsort(means)[::-1]
-                topk_idx = topk_idx[:n_mflows]
-            else:
-                for i in range(n_mflows - n_rand_flows, n_mflows, 1):
-                    while True:
-                        rand_idx = np.random.randint(0, n_series)
-                        if rand_idx not in topk_idx:
-                            topk_idx[i] = rand_idx
-                            break
+            # if topk_idx.size == 0:
+            #     means = np.mean(traffic, axis=0)
+            #     topk_idx = np.argsort(means)[::-1]
+            #     topk_idx = topk_idx[:n_mflows]
+            # else:
+            #     for i in range(n_mflows - n_rand_flows, n_mflows, 1):
+            #         while True:
+            #             rand_idx = np.random.randint(0, n_series)
+            #             if rand_idx not in topk_idx:
+            #                 topk_idx[i] = rand_idx
+            #                 break
+
+            means = np.mean(traffic, axis=0)
+            topk_idx = np.argsort(means)[::-1]
+            topk_idx = topk_idx[:n_mflows]
 
             x_topk = traffic[:, topk_idx]
             x_topk = np.expand_dims(x_topk, axis=-1)  # [len_x, k, 1]
