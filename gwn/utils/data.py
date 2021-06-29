@@ -165,6 +165,8 @@ def data_preprocessing(data, topk_index, args, gen_times=5, scaler_top_k=None):
 
     # Obtain dataset with topk flows
     X_top_k = np.copy(X[:, topk_index])
+
+    X = np2torch(X, args.device)
     X_top_k = np2torch(X_top_k, args.device)
 
     # scaling data

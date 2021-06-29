@@ -214,8 +214,7 @@ def main(args, **model_kwargs):
 
     x_gt = x_gt.cpu().data.numpy()  # [timestep, seq_x, seq_y]
     y_gt = y_gt.cpu().data.numpy()
-    yhat = yhat.cpu().data.numpy()
-    top_k_index = test_loader.dataset.Topkindex
+    y_cs = y_cs.cpu().data.numpy()
 
     if args.run_te != 'None':
         run_te(x_gt, y_gt, y_cs, args)

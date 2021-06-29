@@ -225,8 +225,7 @@ def data_preprocessing(data, args, gen_times=5):
             y_topk = np.max(f_traffic[:, topk_idx], keepdims=True,
                             axis=0)  # [1, k] max of each flow in next routing cycle
 
-            y_real = torch.max(X[t + len_x:t + len_x + len_y], dim=0)[0]
-            y_real = y_real.reshape(1, -1)
+            y_real = np.max(X[t + len_x:t + len_x + len_y], keepdims=True, axis=0)
 
             # Data for doing traffic engineering
             x_gt = oX[t * args.k:(t + len_x) * args.k]  # Original X, in case of scaling data
