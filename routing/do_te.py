@@ -220,7 +220,7 @@ def gwn_ls2sr(yhat, y_gt, graph, te_step, args):
 
     solution = None
     dynamicity = np.zeros(shape=(te_step, 7))
-    for i in range(te_step):
+    for i in tqdm(range(te_step)):
         mean = np.mean(y_gt[i], axis=1)
         std_mean = np.std(mean)
         std = np.std(y_gt[i], axis=1)
