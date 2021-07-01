@@ -6,7 +6,7 @@ from tqdm import trange
 def call(args):
     p = sp.run(args=args,
                stdout=sp.PIPE,
-               stderr=sp.PIPE)
+               stderr=sp.PIPE, check=True)
     stdout = p.stdout.decode('utf-8')
     return stdout
 
