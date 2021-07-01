@@ -23,7 +23,9 @@ def main():
     for d in iteration:
         for test in testset:
             for cs in CS:
-                args = ['python train.py --do_graph_conv --aptonly --addaptadj --randomadj',
+                args = ['python',
+                        'train.py',
+                        '--do_graph_conv --aptonly --addaptadj --randomadj',
                         '--train_batch_size 64 --val_batch_size 64',
                         '--test --run_te gwn_ls2sr',
                         '--device', 'cuda:1',
