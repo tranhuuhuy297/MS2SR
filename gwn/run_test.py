@@ -1,5 +1,5 @@
 import subprocess as sp
-
+import os
 from tqdm import trange
 
 
@@ -23,24 +23,24 @@ def main():
     for d in iteration:
         for test in testset:
             for cs in CS:
-                args = ['python',
-                        'train.py',
-                        '--do_graph_conv --aptonly --addaptadj --randomadj',
-                        '--train_batch_size 64 --val_batch_size 64',
-                        '--test --run_te gwn_ls2sr',
-                        '--device', 'cuda:0',
-                        '--random_rate', str(random_rate[d]),
-                        '--testset', str(test),
-                        '--cs', str(cs)]
-                stdout = call(args)
-                print(stdout)
+                # args = ['python',
+                #         'train.py',
+                #         '--do_graph_conv --aptonly --addaptadj --randomadj',
+                #         '--train_batch_size 64 --val_batch_size 64',
+                #         '--test --run_te gwn_ls2sr',
+                #         '--device', 'cuda:0',
+                #         '--random_rate', str(random_rate[d]),
+                #         '--testset', str(test),
+                #         '--cs', str(cs)]
+                # stdout = call(args)
+                # print(stdout)
 
-                # cmd = 'python train.py --do_graph_conv --aptonly --addaptadj --randomadj'
-                # cmd += ' --train_batch_size 64 --val_batch_size 64 --test --run_te gwn_ls2sr'
-                # cmd += ' --dataset {}--random_rate {} --testset {} --cs {} --device {}'.format(dataset_name,
-                #                                                                                random_rate[d],
-                #                                                                                test, cs, device)
-                # os.system(cmd)
+                cmd = 'python train.py --do_graph_conv --aptonly --addaptadj --randomadj'
+                cmd += ' --train_batch_size 64 --val_batch_size 64 --test --run_te gwn_ls2sr'
+                cmd += ' --dataset {}--random_rate {} --testset {} --cs {} --device {}'.format(dataset_name,
+                                                                                               random_rate[d],
+                                                                                               test, cs, device)
+                os.system(cmd)
                 iteration.set_description(
                     'Dataset {} random_rate: {} - testset {} - cs {}'.format(dataset_name, random_rate[d], test, cs))
 
