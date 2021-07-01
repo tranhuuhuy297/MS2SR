@@ -37,9 +37,9 @@ def main():
 
                 cmd = 'python train.py --do_graph_conv --aptonly --addaptadj --randomadj'
                 cmd += ' --train_batch_size 64 --val_batch_size 64 --test --run_te gwn_ls2sr'
-                cmd += ' --dataset {}--random_rate {} --testset {} --cs {} --device {}'.format(dataset_name,
-                                                                                               random_rate[d],
-                                                                                               test, cs, device)
+                cmd += ' --dataset {} --random_rate {} --testset {} --cs {} --device {}'.format(dataset_name,
+                                                                                                random_rate[d],
+                                                                                                test, cs, device)
                 os.system(cmd)
                 iteration.set_description(
                     'Dataset {} random_rate: {} - testset {} - cs {}'.format(dataset_name, random_rate[d], test, cs))
