@@ -27,9 +27,9 @@ def main():
                         '--train_batch_size 64 --val_batch_size 64',
                         '--test --run_te gwn_ls2sr',
                         '--device', 'cuda:1',
-                        '--random_rate', d,
-                        '--testset', test,
-                        '--cs', cs]
+                        '--random_rate', str(d),
+                        '--testset', str(test),
+                        '--cs', str(cs)]
                 stdout = call(args)
 
                 iteration.set_description(
