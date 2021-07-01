@@ -6,7 +6,7 @@ from tqdm import trange
 def call(args):
     p = sp.run(args=args,
                stdout=sp.PIPE,
-               stderr=sp.PIPE)
+               stderr=sp.PIPE, check=True)
     stdout = p.stdout.decode('utf-8')
     return stdout
 
@@ -29,13 +29,13 @@ def main():
                         '--train_batch_size 64 --val_batch_size 64',
                         '--test --run_te gwn_ls2sr',
                         '--device', 'cuda:1',
-                        '--random_rate', str(d),
+                        '--random_rate', str(random_rate[d]),
                         '--testset', str(test),
                         '--cs', str(cs)]
                 stdout = call(args)
 
                 iteration.set_description(
-                    'Dataset {} random_rate: {} - testset {} - cs {}'.format(dataset_name, d, test, cs))
+                    'Dataset {} random_rate: {} - testset {} - cs {}'.format(dataset_name, random_rate[d], test, cs))
 
 
 if __name__ == '__main__':
