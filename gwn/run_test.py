@@ -33,7 +33,7 @@ def main():
                         '--testset', str(test),
                         '--cs', str(cs)]
                 stdout = call(args)
-
+                print(stdout)
                 iteration.set_description(
                     'Dataset {} random_rate: {} - testset {} - cs {}'.format(dataset_name, random_rate[d], test, cs))
 
