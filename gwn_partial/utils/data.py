@@ -257,7 +257,7 @@ def data_preprocessing(data, args, gen_times=5, scaler_top_k=None):
 
     # scaling data
     if scaler_top_k is None:
-        scaler_top_k = StandardScaler_torch()
+        scaler_top_k = StandardScaler_torch_all()
         scaler_top_k.fit(X)
     else:
         scaler_top_k = scaler_top_k
