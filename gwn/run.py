@@ -39,7 +39,6 @@ def main():
     CS = [0, 1]
     testset = [0, 1, 2, 3, 4, 5]
     flow_selections = ['train']
-    device = args.device
     iteration = trange(len(mon_rate))
     # experiment for each dataset
     for d in iteration:
@@ -50,7 +49,7 @@ def main():
                     cmd += ' --train_batch_size 64 --val_batch_size 64'
                     cmd += ' --dataset {}'.format(dataset_name)
                     cmd += ' --mon_rate {}'.format(mon_rate[d])
-                    cmd += ' --device {}'.format(device)
+                    cmd += ' --device {}'.format(args.device)
                     cmd += ' --fs {}'.format(fs)
                     if args.test:
                         cmd += ' --test'
