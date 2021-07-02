@@ -26,11 +26,7 @@ def get_args():
                                                        'firststep', 'or'],
                         default='None')
     parser.add_argument('--device', type=str, default='cuda:0')
-    parser.add_argument('--fs', help='Flow selection strategiy', type=str, choices=['rand',
-                                                                                    'prand',
-                                                                                    'train',
-                                                                                    'gt',
-                                                                                    'pred'],
+    parser.add_argument('--fs', help='Flow selection strategiy', type=str, choices=['train'],
                         default='train')
 
     args = parser.parse_args()

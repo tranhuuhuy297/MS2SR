@@ -28,7 +28,6 @@ def get_args():
     parser.add_argument('--device', type=str, default='cuda:0')
     parser.add_argument('--fs', help='Flow selection strategiy', type=str, choices=['rand',
                                                                                     'prand',
-                                                                                    'train',
                                                                                     'gt',
                                                                                     'pred'],
                         default='train')
