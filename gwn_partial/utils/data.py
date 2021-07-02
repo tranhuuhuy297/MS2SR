@@ -426,16 +426,23 @@ def get_dataloader(args):
     saved_test_path = os.path.join(stored_path, 'test.pkl')
     if not os.path.exists(saved_train_path):
 
+        if args.fs == 'rand':
+            gentime_train = 10
+            gentime_test = 10
+        else:
+            gentime_train = 10
+            gentime_test = 1
+
         train, val, test_list = train_test_split(X)
         print('Data preprocessing: TRAINSET')
-        trainset = data_preprocessing(train, args, gen_times=10)
+        trainset = data_preprocessing(train, args, gen_times=gentime_train)
         train_scaler = trainset['Scaler_topk']
         with open(saved_train_path, 'wb') as fp:
             pickle.dump(trainset, fp, protocol=pickle.HIGHEST_PROTOCOL)
             fp.close()
 
         print('Data preprocessing: VALSET')
-        valset = data_preprocessing(val, args, gen_times=10, scaler_top_k=train_scaler)
+        valset = data_preprocessing(val, args, gen_times=gentime_train, scaler_top_k=train_scaler)
         with open(saved_val_path, 'wb') as fp:
             pickle.dump(valset, fp, protocol=pickle.HIGHEST_PROTOCOL)
             fp.close()
@@ -443,7 +450,7 @@ def get_dataloader(args):
         testset_list = []
         for i in range(len(test_list)):
             print('Data preprocessing: TESTSET {}'.format(i))
-            testset = data_preprocessing(test_list[i], args, gen_times=1, scaler_top_k=train_scaler)
+            testset = data_preprocessing(test_list[i], args, gen_times=gentime_test, scaler_top_k=train_scaler)
             testset_list.append(testset)
 
         with open(saved_test_path, 'wb') as fp:
