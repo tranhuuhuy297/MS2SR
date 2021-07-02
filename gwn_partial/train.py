@@ -167,6 +167,9 @@ def main(args, **model_kwargs):
         y_cs = np.zeros(shape=(ygt_shape[0], 1, ygt_shape[-1]))
 
         # obtain psi, G, R
+        psi_save_path = os.path.join(args.datapath, 'cs/saved_psi/')
+        if not os.path.exists(psi_save_path):
+            os.makedirs(psi_save_path)
         path_psi_phi = os.path.join(logger.log_dir, '{}_psi_phi.pkl'.format(args.dataset))
         if not os.path.isfile(path_psi_phi):
             print('|--- Calculating psi, phi')
@@ -190,6 +193,17 @@ def main(args, **model_kwargs):
                 fp.close()
             psi = obj['psi']
             phi = get_phi(topk_index, total_series)
+
+            save_new_psi_path = os.path.join(psi_save_path, '{}_{}_{}_{}_psi.pkl'.format(args.dataset,
+                                                                                         args.random_rate,
+                                                                                         args.seq_len_x,
+                                                                                         args.seq_len_y))
+            obj = {
+                'psi': psi,
+            }
+            with open(save_new_psi_path, 'wb') as fp:
+                pickle.dump(obj, fp, protocol=pickle.HIGHEST_PROTOCOL)
+                fp.close()
             print('psi: ', psi.matrix.shape)
             print('phi: ', phi.shape)
 
