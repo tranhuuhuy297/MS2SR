@@ -26,6 +26,12 @@ def get_args():
                                                        'firststep', 'or'],
                         default='None')
     parser.add_argument('--device', type=str, default='cuda:0')
+    parser.add_argument('--fs', help='Flow selection strategiy', type=str, choices=['rand',
+                                                                                    'prand',
+                                                                                    'train',
+                                                                                    'gt',
+                                                                                    'pred'],
+                        default='train')
 
     args = parser.parse_args()
     return args
@@ -42,29 +48,27 @@ def main():
     else:
         CS = [1]
         testset = [0]
-    flow_selections = ['train']
     iteration = trange(len(mon_rate))
     # experiment for each dataset
     for d in iteration:
         for test in testset:
-            for fs in flow_selections:
-                for cs in CS:
-                    cmd = 'python train.py --do_graph_conv --aptonly --addaptadj --randomadj'
-                    cmd += ' --train_batch_size 64 --val_batch_size 64'
-                    cmd += ' --dataset {}'.format(dataset_name)
-                    cmd += ' --mon_rate {}'.format(mon_rate[d])
-                    cmd += ' --device {}'.format(args.device)
-                    cmd += ' --fs {}'.format(fs)
-                    if args.test:
-                        cmd += ' --test'
-                        cmd += ' --testset {} --cs {}'.format(test, cs)
+            for cs in CS:
+                cmd = 'python train.py --do_graph_conv --aptonly --addaptadj --randomadj'
+                cmd += ' --train_batch_size 64 --val_batch_size 64'
+                cmd += ' --dataset {}'.format(dataset_name)
+                cmd += ' --mon_rate {}'.format(mon_rate[d])
+                cmd += ' --device {}'.format(args.device)
+                cmd += ' --fs {}'.format(args.fs)
+                if args.test:
+                    cmd += ' --test'
+                    cmd += ' --testset {} --cs {}'.format(test, cs)
 
-                    if args.run_te != 'None':
-                        cmd += ' --run_te {}'.format(args.run_te)
+                if args.run_te != 'None':
+                    cmd += ' --run_te {}'.format(args.run_te)
 
-                    os.system(cmd)
-                    iteration.set_description(
-                        'Dataset {} mon_rate: {} - testset {} - cs {}'.format(dataset_name, mon_rate[d], test, cs))
+                os.system(cmd)
+                iteration.set_description(
+                    'Dataset {} mon_rate: {} - testset {} - cs {}'.format(dataset_name, mon_rate[d], test, cs))
 
 
 if __name__ == '__main__':
