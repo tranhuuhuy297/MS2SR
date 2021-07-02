@@ -167,7 +167,7 @@ def main(args, **model_kwargs):
         if not os.path.exists(psi_save_path):
             os.makedirs(psi_save_path)
         psi_save_path = os.path.join(psi_save_path, '{}_{}_{}_{}_psi.pkl'.format(args.dataset,
-                                                                                 args.random_rate,
+                                                                                 args.mon_rate,
                                                                                  args.seq_len_x,
                                                                                  args.seq_len_y))
         if not os.path.isfile(psi_save_path):
@@ -193,7 +193,7 @@ def main(args, **model_kwargs):
         # traffic reconstruction using compressive sensing
         A = np.dot(phi, psi.matrix)
         for i in range(y_cs.shape[0]):
-            sparse = Solver_l0(A, max_iter=100, sparsity=int(args.random_rate / 100 * y_cs.shape[-1])).fit(yhat[i].T)
+            sparse = Solver_l0(A, max_iter=100, sparsity=int(args.mon_rate / 100 * y_cs.shape[-1])).fit(yhat[i].T)
             y_cs[i] = np.dot(psi.matrix, sparse).T
 
     else:
@@ -225,7 +225,7 @@ def main(args, **model_kwargs):
         run_te(x_gt, y_gt, y_cs, args)
 
     print('{} testset: {} x: {} y: {} topk:{} cs: {}'.format(args.dataset, args.testset, args.seq_len_x, args.seq_len_y,
-                                                             args.random_rate, args.cs))
+                                                             args.mon_rate, args.cs))
 
 
 if __name__ == "__main__":

@@ -192,7 +192,7 @@ def data_preprocessing(data, args, gen_times=5):
 
     X = granularity(data, args.k)
 
-    n_mflows = int(args.random_rate * n_series / 100)
+    n_mflows = int(args.mon_rate * n_series / 100)
     n_rand_flows = int(30 * n_mflows / 100)
     len_x = args.seq_len_x
     len_y = args.seq_len_y
@@ -295,7 +295,7 @@ def get_dataloader(args):
 
     stored_path = os.path.join(args.datapath, 'pdata/gwn_cs_partial_{}_{}_{}_{}/'.format(args.dataset, args.seq_len_x,
                                                                                          args.seq_len_y,
-                                                                                         args.random_rate))
+                                                                                         args.mon_rate))
     if not os.path.exists(stored_path):
         os.makedirs(stored_path)
 

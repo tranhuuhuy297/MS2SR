@@ -36,7 +36,7 @@ def get_psi(args, samples=10000, iterator=100):
 
     D = DCTDictionary(size_D, size_D)
 
-    psi, _ = KSVD(D, MatchingPursuit, int(args.random_rate / 100 * X.shape[1])).fit(X_temp, iterator)
+    psi, _ = KSVD(D, MatchingPursuit, int(args.mon_rate / 100 * X.shape[1])).fit(X_temp, iterator)
     return psi
 
 
@@ -169,7 +169,7 @@ def main(args, **model_kwargs):
 
     A = np.dot(phi, psi.matrix)
     for i in range(y_cs.shape[0]):
-        sparse = Solver_l0(A, max_iter=100, sparsity=int(args.random_rate / 100 * y_cs.shape[-1])).fit(yhat[i].T)
+        sparse = Solver_l0(A, max_iter=100, sparsity=int(args.mon_rate / 100 * y_cs.shape[-1])).fit(yhat[i].T)
         y_cs[i] = np.dot(psi.matrix, sparse).T
 
     x_gt = torch.from_numpy(x_gt).to(args.device)

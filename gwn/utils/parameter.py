@@ -17,7 +17,7 @@ def get_args():
                         choices=[0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
                         help='Test set, (default 0)')
 
-    parser.add_argument('--random_rate', type=int, default=10)
+    parser.add_argument('--mon_rate', type=int, default=10)
     parser.add_argument('--cs', type=int, default=1, choices=[0, 1])
     parser.add_argument('--top_k_random', action='store_true')
 
@@ -90,6 +90,18 @@ def get_args():
                                                        'firststep', 'or'],
                         default='None')
 
+    # rand: topk random
+    # prand: topk + partially random in each routing cycle
+    # train: topk from training set
+    # gt: exact topk in each routing cycle
+    # pred: topk from the predicted reconstructed TM
+    parser.add_argument('--fs', help='Flow selection strategiy', type=str, choices=['rand',
+                                                                                    'prand'
+                                                                                    'train',
+                                                                                    'gt',
+                                                                                    'pred'],
+                        default='train')
+
     parser.add_argument('--timeout', type=float, default=10.0)
 
     parser.add_argument('--te_step', type=int, default=0)
@@ -124,7 +136,7 @@ def print_args(args):
     print('    - granularity scale      :', args.k)
     print('    - num_series             :', args.nSeries)
     print('    - top_k_random           :', args.top_k_random)
-    print('    - random measure rate    : {}%'.format(args.random_rate))
+    print('    - random measure rate    : {}%'.format(args.mon_rate))
     print('    - train size             : {}x{}'.format(args.train_size, args.nSeries))
     print('    - val size               : {}x{}'.format(args.val_size, args.nSeries))
     print('    - test size              : {}x{}'.format(args.test_size, args.nSeries))

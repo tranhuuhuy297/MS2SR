@@ -16,13 +16,13 @@ def main():
     # get args
     dataset_name = 'abilene_tm'
     # dataset_name = 'geant_tm'
-    random_rate = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20]
+    mon_rate = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20]
     # CS = [0, 1]
     CS = [1]
     # testset = [0, 1, 2, 3, 4, 5]
     testset = [0]
     device = 'cuda:0'
-    iteration = trange(len(random_rate))
+    iteration = trange(len(mon_rate))
     # experiment for each dataset
     for d in iteration:
         for test in testset:
@@ -33,7 +33,7 @@ def main():
                 #         '--train_batch_size 64 --val_batch_size 64',
                 #         '--test --run_te gwn_ls2sr',
                 #         '--device', 'cuda:0',
-                #         '--random_rate', str(random_rate[d]),
+                #         '--mon_rate', str(mon_rate[d]),
                 #         '--testset', str(test),
                 #         '--cs', str(cs)]
                 # stdout = call(args)
@@ -42,12 +42,12 @@ def main():
                 cmd = 'python train.py --do_graph_conv --aptonly --addaptadj --randomadj'
                 cmd += ' --train_batch_size 64 --val_batch_size 64 --test'
                 # cmd += ' --train_batch_size 64 --val_batch_size 64 --test --run_te gwn_ls2sr'
-                cmd += ' --dataset {} --random_rate {} --testset {} --cs {} --device {}'.format(dataset_name,
-                                                                                                random_rate[d],
-                                                                                                test, cs, device)
+                cmd += ' --dataset {} --mon_rate {} --testset {} --cs {} --device {}'.format(dataset_name,
+                                                                                             mon_rate[d],
+                                                                                             test, cs, device)
                 os.system(cmd)
                 iteration.set_description(
-                    'Dataset {} random_rate: {} - testset {} - cs {}'.format(dataset_name, random_rate[d], test, cs))
+                    'Dataset {} mon_rate: {} - testset {} - cs {}'.format(dataset_name, mon_rate[d], test, cs))
 
 
 if __name__ == '__main__':

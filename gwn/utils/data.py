@@ -264,7 +264,7 @@ def get_dataloader(args):
     total_timesteps, total_series = X.shape
 
     stored_path = os.path.join(args.datapath, 'pdata/gwn_cs_{}_{}_{}_{}/'.format(args.dataset, args.seq_len_x,
-                                                                                 args.seq_len_y, args.random_rate))
+                                                                                 args.seq_len_y, args.mon_rate))
     if not os.path.exists(stored_path):
         os.makedirs(stored_path)
 
@@ -275,7 +275,7 @@ def get_dataloader(args):
         train, val, test_list = train_test_split(X)
         means = np.mean(train, axis=0)
         top_k_index = np.argsort(means)[::-1]
-        top_k_index = top_k_index[:int(args.random_rate * train.shape[1] / 100)]
+        top_k_index = top_k_index[:int(args.mon_rate * train.shape[1] / 100)]
 
         if args.top_k_random:
             top_k_index = np.random.randint(X.shape[1], size=top_k_index.shape[0])
