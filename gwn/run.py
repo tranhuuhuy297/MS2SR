@@ -36,8 +36,12 @@ def main():
     args = get_args()
     dataset_name = args.dataset
     mon_rate = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20]
-    CS = [0, 1]
-    testset = [0, 1, 2, 3, 4, 5]
+    if args.test:
+        CS = [0, 1]
+        testset = [0, 1, 2, 3, 4, 5]
+    else:
+        CS = [1]
+        testset = [0]
     flow_selections = ['train']
     iteration = trange(len(mon_rate))
     # experiment for each dataset
