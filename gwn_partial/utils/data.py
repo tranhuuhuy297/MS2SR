@@ -241,7 +241,40 @@ def topk_gt(Xscaled, X, oX, t, n_mflows, args):
     # Data for doing traffic engineering
     x_gt = oX[t * args.k:(t + args.seq_len_x) * args.k]  # Original X, in case of scaling data
     y_gt = oX[(t + args.seq_len_x) * args.k: (
-                                                         t + args.seq_len_x + args.seq_len_y) * args.k]  # Original Y, in case of scaling data
+                                                     t + args.seq_len_x + args.seq_len_y) * args.k]  # Original Y, in case of scaling data
+
+    return x_topk, y_topk, y_real, x_gt, y_gt, topk_idx
+
+
+def topk_prand(Xscaled, X, oX, t, n_mflows, topk_idx, n_rand_flows, args):
+    # obtain exact topk flow using original data X
+    n_timesteps, n_series = oX.shape
+    if topk_idx.size == 0:
+        means = np.mean(X[t:t + args.seq_len_x], axis=0)
+        topk_idx = np.argsort(means)[::-1]
+        topk_idx = topk_idx[:n_mflows]
+    else:
+        for i in range(n_mflows - n_rand_flows, n_mflows, 1):
+            while True:
+                rand_idx = np.random.randint(0, n_series)
+                if rand_idx not in topk_idx:
+                    topk_idx[i] = rand_idx
+                    break
+
+    # x_topk from scaled data and topk_idx
+    x_topk = Xscaled[t:t + args.seq_len_x, topk_idx]
+    x_topk = np.expand_dims(x_topk, axis=-1)  # [len_x, k, 1]
+
+    # y_topk and yreal from original data
+    y_topk = np.max(X[t + args.seq_len_x: t + args.seq_len_x + args.seq_len_y, topk_idx], keepdims=True,
+                    axis=0)  # [1, k] max of each flow in next routing cycle
+
+    y_real = np.max(X[t + args.seq_len_x:t + args.seq_len_x + args.seq_len_y], keepdims=True, axis=0)
+
+    # Data for doing traffic engineering
+    x_gt = oX[t * args.k:(t + args.seq_len_x) * args.k]  # Original X, in case of scaling data
+    y_gt = oX[(t + args.seq_len_x) * args.k: (
+                                                     t + args.seq_len_x + args.seq_len_y) * args.k]  # Original Y, in case of scaling data
 
     return x_topk, y_topk, y_real, x_gt, y_gt, topk_idx
 
@@ -268,7 +301,7 @@ def data_preprocessing(data, args, gen_times=5, scaler_top_k=None):
     X_scaled = X_scaled.cpu().data.numpy()  # numpy
 
     n_mflows = int(args.mon_rate * n_series / 100)
-    n_rand_flows = int(30 * n_mflows / 100)
+    n_rand_flows = int(50 * n_mflows / 100)
     len_x = args.seq_len_x
     len_y = args.seq_len_y
 
@@ -280,24 +313,14 @@ def data_preprocessing(data, args, gen_times=5, scaler_top_k=None):
     for _ in range(gen_times):
         topk_idx = np.empty(0)
         for t in range(start_idx, n_timesteps - len_x - len_y, len_x):
-            traffic = X[t:t + len_x]
-            f_traffic = X[t + len_x: t + len_x + len_y]
-
-            # if topk_idx.size == 0:
-            #     means = np.mean(traffic, axis=0)
-            #     topk_idx = np.argsort(means)[::-1]
-            #     topk_idx = topk_idx[:n_mflows]
-            # else:
-            #     for i in range(n_mflows - n_rand_flows, n_mflows, 1):
-            #         while True:
-            #             rand_idx = np.random.randint(0, n_series)
-            #             if rand_idx not in topk_idx:
-            #                 topk_idx[i] = rand_idx
-            #                 break
 
             if args.fs == 'gt':
                 x_topk, y_topk, y_real, x_gt, y_gt, topk_idx = topk_gt(Xscaled=X_scaled, X=X, oX=oX,
                                                                        t=t, n_mflows=n_mflows, args=args)
+            elif args.fs == 'prand':
+                x_topk, y_topk, y_real, x_gt, y_gt, topk_idx = topk_prand(Xscaled=X_scaled, X=X, oX=oX,
+                                                                          t=t, n_mflows=n_mflows, args=args,
+                                                                          topk_idx=topk_idx, n_rand_flows=n_rand_flows)
             else:
                 raise RuntimeError('No flow selection!')
 
