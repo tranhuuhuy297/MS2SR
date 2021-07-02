@@ -1,5 +1,6 @@
-import subprocess as sp
 import os
+import subprocess as sp
+
 from tqdm import trange
 
 
@@ -13,7 +14,8 @@ def call(args):
 
 def main():
     # get args
-    dataset_name = 'geant_tm'
+    # dataset_name = 'geant_tm'
+    dataset_name = 'abilene_tm'
     random_rate = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20]
     CS = [0, 1]
     testset = [0, 1, 2, 3, 4, 5]
@@ -36,7 +38,7 @@ def main():
                 # print(stdout)
 
                 cmd = 'python train.py --do_graph_conv --aptonly --addaptadj --randomadj'
-                cmd += ' --train_batch_size 64 --val_batch_size 64 --test --run_te gwn_ls2sr'
+                cmd += ' --train_batch_size 64 --val_batch_size 64 --test'
                 cmd += ' --dataset {} --random_rate {} --testset {} --cs {} --device {}'.format(dataset_name,
                                                                                                 random_rate[d],
                                                                                                 test, cs, device)
