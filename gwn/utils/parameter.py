@@ -96,7 +96,7 @@ def get_args():
     # gt: exact topk in each routing cycle
     # pred: topk from the predicted reconstructed TM
     parser.add_argument('--fs', help='Flow selection strategiy', type=str, choices=['rand',
-                                                                                    'prand'
+                                                                                    'prand',
                                                                                     'train',
                                                                                     'gt',
                                                                                     'pred'],
