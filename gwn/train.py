@@ -166,30 +166,37 @@ def main(args, **model_kwargs):
         psi_save_path = os.path.join(args.datapath, 'cs/saved_psi/')
         if not os.path.exists(psi_save_path):
             os.makedirs(psi_save_path)
-
-        psi_save_path = os.path.join(psi_save_path, '{}_{}_{}_{}_psi.pkl'.format(args.dataset,
-                                                                                 args.random_rate,
-                                                                                 args.seq_len_x,
-                                                                                 args.seq_len_y))
-        if not os.path.isfile(psi_save_path):
+        path_psi_phi = os.path.join(logger.log_dir, '{}_psi_phi.pkl'.format(args.dataset))
+        if not os.path.isfile(path_psi_phi):
             print('|--- Calculating psi, phi')
 
             psi = get_psi(args)
             phi = get_phi(args, top_k_index)
             obj = {
                 'psi': psi,
+                'phi': phi
             }
-            with open(psi_save_path, 'wb') as fp:
+            with open(path_psi_phi, 'wb') as fp:
                 pickle.dump(obj, fp, protocol=pickle.HIGHEST_PROTOCOL)
                 fp.close()
         else:
-            print('|--- Loading psi, phi from {}'.format(psi_save_path))
+            print('|--- Loading psi, phi from {}'.format(path_psi_phi))
+            phi = get_phi(args, top_k_index)
 
-            with open(psi_save_path, 'rb') as fp:
+            with open(path_psi_phi, 'rb') as fp:
                 obj = pickle.load(fp)
                 fp.close()
             psi = obj['psi']
-            phi = get_phi(args, top_k_index)
+            save_new_psi_path = os.path.join(psi_save_path, '{}_{}_{}_{}_psi.pkl'.format(args.dataset,
+                                                                                         args.random_rate,
+                                                                                         args.seq_len_x,
+                                                                                         args.seq_len_y))
+            obj = {
+                'psi': psi,
+            }
+            with open(save_new_psi_path, 'wb') as fp:
+                pickle.dump(obj, fp, protocol=pickle.HIGHEST_PROTOCOL)
+                fp.close()
 
         # traffic reconstruction using compressive sensing
         A = np.dot(phi, psi.matrix)
