@@ -14,11 +14,13 @@ def call(args):
 
 def main():
     # get args
-    dataset_name = 'abilene_tm'
-    # dataset_name = 'geant_tm'
+    # dataset_name = 'abilene_tm'
+    dataset_name = 'geant_tm'
     random_rate = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20]
-    CS = [0, 1]
-    testset = [0, 1, 2, 3, 4, 5]
+    # CS = [0, 1]
+    CS = [1]
+    # testset = [0, 1, 2, 3, 4, 5]
+    testset = [0]
     device = 'cuda:0'
     iteration = trange(len(random_rate))
     # experiment for each dataset
