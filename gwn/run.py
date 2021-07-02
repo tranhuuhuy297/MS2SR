@@ -38,7 +38,7 @@ def main():
     mon_rate = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20]
     CS = [0, 1]
     testset = [0, 1, 2, 3, 4, 5]
-    flow_selections = ['gt']
+    flow_selections = ['train']
     device = args.device
     iteration = trange(len(mon_rate))
     # experiment for each dataset
