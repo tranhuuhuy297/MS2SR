@@ -14,8 +14,8 @@ def call(args):
 
 def main():
     # get args
-    # dataset_name = 'abilene_tm'
-    dataset_name = 'geant_tm'
+    dataset_name = 'abilene_tm'
+    # dataset_name = 'geant_tm'
     random_rate = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20]
     # CS = [0, 1]
     CS = [1]
