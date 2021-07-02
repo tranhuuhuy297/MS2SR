@@ -67,6 +67,43 @@ class StandardScaler_torch:
         return data
 
 
+class StandardScaler_torch_all:
+
+    def __init__(self):
+        self.means = 0
+        self.stds = 0
+
+    def fit(self, data):
+        self.means = torch.mean(data)
+        self.stds = torch.std(data)
+
+    def transform(self, data):
+        _data = data.clone()
+        data_size = data.size()
+
+        if len(data_size) > 2:
+            _data = _data.reshape(-1, data_size[-1])
+
+        _data = (_data - self.means) / (self.stds + 1e-12)
+
+        if len(data_size) > 2:
+            _data = _data.reshape(data.size())
+
+        return _data
+
+    def inverse_transform(self, data):
+        data_size = data.size()
+        if len(data_size) > 2:
+            data = data.reshape(-1, data_size[-1])
+
+        data = (data * (self.stds + 1e-12)) + self.means
+
+        if len(data_size) > 2:
+            data = data.reshape(data_size)
+
+        return data
+
+
 def granularity(data, k):
     if k == 1:
         return np.copy(data)
@@ -91,6 +128,7 @@ class PartialTrafficDataset(Dataset):
         self.Xgt = self.np2torch(dataset['Xgt'])
         self.Ygt = self.np2torch(dataset['Ygt'])
         self.Topkindex = self.np2torch(dataset['Topkindex'])
+        self.scaler_topk = dataset['Scaler_topk']
 
         self.nsample, self.len_x, self.nflows, self.nfeatures = self.Xtopk.shape
 
@@ -113,11 +151,11 @@ class PartialTrafficDataset(Dataset):
                   'topk_index': topk_index}
         return sample
 
-    # def transform(self, X):
-    #     return self.scaler.transform(X)
-    #
-    # def inverse_transform(self, X):
-    #     return self.scaler.inverse_transform(X)
+    def transform(self, X):
+        return self.scaler_topk.transform(X)
+
+    def inverse_transform(self, X):
+        return self.scaler_topk.inverse_transform(X)
 
     def np2torch(self, X):
         X = torch.Tensor(X)
@@ -184,13 +222,50 @@ def get_mx(X, seq_len_x, n_timeslots, device):
     return mx
 
 
-def data_preprocessing(data, args, gen_times=5):
+def topk_gt(Xscaled, X, oX, t, n_mflows, args):
+    # obtain exact topk flow using original data X
+    means = np.mean(X[t:t + args.seq_len_x], axis=0)
+    topk_idx = np.argsort(means)[::-1]
+    topk_idx = topk_idx[:n_mflows]
+
+    # x_topk from scaled data and topk_idx
+    x_topk = Xscaled[t:t + args.seq_len_x, topk_idx]
+    x_topk = np.expand_dims(x_topk, axis=-1)  # [len_x, k, 1]
+
+    # y_topk and yreal from original data
+    y_topk = np.max(X[t + args.seq_len_x: t + args.seq_len_x + args.seq_len_y, topk_idx], keepdims=True,
+                    axis=0)  # [1, k] max of each flow in next routing cycle
+
+    y_real = np.max(X[t + args.seq_len_x:t + args.seq_len_x + args.seq_len_y], keepdims=True, axis=0)
+
+    # Data for doing traffic engineering
+    x_gt = oX[t * args.k:(t + args.seq_len_x) * args.k]  # Original X, in case of scaling data
+    y_gt = oX[(t + args.seq_len_x) * args.k: (
+                                                         t + args.seq_len_x + args.seq_len_y) * args.k]  # Original Y, in case of scaling data
+
+    return x_topk, y_topk, y_real, x_gt, y_gt, topk_idx
+
+
+def data_preprocessing(data, args, gen_times=5, scaler_top_k=None):
     n_timesteps, n_series = data.shape
 
     oX = np.copy(data)
     # oX = np2torch(oX, args.device)
 
     X = granularity(data, args.k)
+    X = np2torch(X, args.device)
+
+    # scaling data
+    if scaler_top_k is None:
+        scaler_top_k = StandardScaler_torch()
+        scaler_top_k.fit(X)
+    else:
+        scaler_top_k = scaler_top_k
+
+    X_scaled = scaler_top_k.transform(X)  # dtype torch
+
+    X = X.cpu().data.numpy()  # dtype numpy
+    X_scaled = X_scaled.cpu().data.numpy()  # numpy
 
     n_mflows = int(args.mon_rate * n_series / 100)
     n_rand_flows = int(30 * n_mflows / 100)
@@ -198,7 +273,7 @@ def data_preprocessing(data, args, gen_times=5):
     len_y = args.seq_len_y
 
     dataset = {'Xtopk': [], 'Ytopk': [], 'Xgt': [], 'Ygt': [], 'Yreal': [],
-               'Topkindex': []}
+               'Topkindex': [], 'Scaler_topk': scaler_top_k}
 
     skip = 4
     start_idx = 0
@@ -220,20 +295,11 @@ def data_preprocessing(data, args, gen_times=5):
             #                 topk_idx[i] = rand_idx
             #                 break
 
-            means = np.mean(traffic, axis=0)
-            topk_idx = np.argsort(means)[::-1]
-            topk_idx = topk_idx[:n_mflows]
-
-            x_topk = traffic[:, topk_idx]
-            x_topk = np.expand_dims(x_topk, axis=-1)  # [len_x, k, 1]
-            y_topk = np.max(f_traffic[:, topk_idx], keepdims=True,
-                            axis=0)  # [1, k] max of each flow in next routing cycle
-
-            y_real = np.max(X[t + len_x:t + len_x + len_y], keepdims=True, axis=0)
-
-            # Data for doing traffic engineering
-            x_gt = oX[t * args.k:(t + len_x) * args.k]  # Original X, in case of scaling data
-            y_gt = oX[(t + len_x) * args.k: (t + len_x + len_y) * args.k]  # Original Y, in case of scaling data
+            if args.fs == 'gt':
+                x_topk, y_topk, y_real, x_gt, y_gt, topk_idx = topk_gt(Xscaled=X_scaled, X=X, oX=oX,
+                                                                       t=t, n_mflows=n_mflows, args=args)
+            else:
+                raise RuntimeError('No flow selection!')
 
             dataset['Xtopk'].append(x_topk)  # [sample, len_x, k, 1]
             dataset['Ytopk'].append(y_topk)  # [sample, 1, k]
@@ -293,9 +359,10 @@ def get_dataloader(args):
     total_timesteps, total_series = X.shape
     # loading data
 
-    stored_path = os.path.join(args.datapath, 'pdata/gwn_cs_partial_{}_{}_{}_{}/'.format(args.dataset, args.seq_len_x,
-                                                                                         args.seq_len_y,
-                                                                                         args.mon_rate))
+    stored_path = os.path.join(args.datapath, 'cs_data/csp_{}_{}_{}_{}_{}/'.format(args.dataset, args.seq_len_x,
+                                                                                   args.seq_len_y,
+                                                                                   args.mon_rate,
+                                                                                   args.fs))
     if not os.path.exists(stored_path):
         os.makedirs(stored_path)
 
@@ -307,12 +374,13 @@ def get_dataloader(args):
         train, val, test_list = train_test_split(X)
         print('Data preprocessing: TRAINSET')
         trainset = data_preprocessing(train, args, gen_times=10)
+        train_scaler = trainset['Scaler_topk']
         with open(saved_train_path, 'wb') as fp:
             pickle.dump(trainset, fp, protocol=pickle.HIGHEST_PROTOCOL)
             fp.close()
 
         print('Data preprocessing: VALSET')
-        valset = data_preprocessing(val, args, gen_times=10)
+        valset = data_preprocessing(val, args, gen_times=10, scaler_top_k=train_scaler)
         with open(saved_val_path, 'wb') as fp:
             pickle.dump(valset, fp, protocol=pickle.HIGHEST_PROTOCOL)
             fp.close()
@@ -320,7 +388,7 @@ def get_dataloader(args):
         testset_list = []
         for i in range(len(test_list)):
             print('Data preprocessing: TESTSET {}'.format(i))
-            testset = data_preprocessing(test_list[i], args, gen_times=1)
+            testset = data_preprocessing(test_list[i], args, gen_times=1, scaler_top_k=train_scaler)
             testset_list.append(testset)
 
         with open(saved_test_path, 'wb') as fp:

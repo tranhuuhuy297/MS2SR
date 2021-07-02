@@ -93,7 +93,7 @@ def main(args, **model_kwargs):
     model.to(device)
     logger = utils.Logger(args)
 
-    engine = utils.Trainer.from_args(model, None, None, args)
+    engine = utils.Trainer.from_args(model, None, train_loader.dataset.scaler_topk, args)
 
     utils.print_args(args)
 

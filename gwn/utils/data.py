@@ -24,10 +24,10 @@ class MinMaxScaler_torch:
 
     def transform(self, data):
         _data = data.clone()
-        return (_data - self.min) / (self.max - self.min + 1e-8)
+        return (_data - self.min) / (self.max - self.min + 1e-12)
 
     def inverse_transform(self, data):
-        return (data * (self.max - self.min + 1e-8)) + self.min
+        return (data * (self.max - self.min + 1e-12)) + self.min
 
 
 class StandardScaler_torch:
@@ -153,6 +153,23 @@ def np2torch(X, device):
     return X
 
 
+def topk_train(Xscaledtopk, Xtopk, X, oX, t, args):
+    x_topk = torch.clone(Xscaledtopk[t:t + args.seq_len_x])
+    x_topk = x_topk.unsqueeze(dim=-1)  # add feature dim [seq_x, n, 1]
+
+    y_topk = torch.max(Xtopk[t + args.seq_len_x:t + args.seq_len_x + args.seq_len_y], dim=0)[0]
+    y_topk = y_topk.reshape(1, -1)
+
+    y_real = torch.max(X[t + args.seq_len_x:t + args.seq_len_x + args.seq_len_y], dim=0)[0]
+    y_real = y_real.reshape(1, -1)
+
+    # Data for doing traffic engineering
+    x_gt = torch.clone(oX[t * args.k:(t + args.seq_len_x) * args.k])
+    y_gt = torch.clone(oX[(t + args.seq_len_x) * args.k: (t + args.seq_len_x + args.seq_len_y) * args.k])
+
+    return x_topk, y_topk, y_real, x_gt, y_gt
+
+
 def data_preprocessing(data, topk_index, args, gen_times=5, scaler_top_k=None):
     n_timesteps, n_series = data.shape
 
@@ -188,18 +205,12 @@ def data_preprocessing(data, topk_index, args, gen_times=5, scaler_top_k=None):
     start_idx = 0
     for _ in range(gen_times):
         for t in range(start_idx, n_timesteps - len_x - len_y, len_x):
-            x_topk = X_scaled_top_k[t:t + len_x]
-            x_topk = x_topk.unsqueeze(dim=-1)  # add feature dim [seq_x, n, 1]
-
-            y_topk = torch.max(X_top_k[t + len_x:t + len_x + len_y], dim=0)[0]
-            y_topk = y_topk.reshape(1, -1)
-
-            y_real = torch.max(X[t + len_x:t + len_x + len_y], dim=0)[0]
-            y_real = y_real.reshape(1, -1)
-
-            # Data for doing traffic engineering
-            x_gt = oX[t * args.k:(t + len_x) * args.k]
-            y_gt = oX[(t + len_x) * args.k: (t + len_x + len_y) * args.k]
+            if args.fs == 'train':
+                x_topk, y_topk, y_real, x_gt, y_gt = topk_train(Xscaledtopk=X_scaled_top_k,
+                                                                Xtopk=X_top_k,
+                                                                X=X, oX=oX, t=t, args=args)
+            else:
+                raise RuntimeError('No flow selection!')
 
             dataset['Xtopk'].append(x_topk)  # [sample, len_x, k, 1]
             dataset['Ytopk'].append(y_topk)  # [sample, 1, k]
@@ -263,8 +274,9 @@ def get_dataloader(args):
     X = load_raw(args)
     total_timesteps, total_series = X.shape
 
-    stored_path = os.path.join(args.datapath, 'pdata/gwn_cs_{}_{}_{}_{}/'.format(args.dataset, args.seq_len_x,
-                                                                                 args.seq_len_y, args.mon_rate))
+    stored_path = os.path.join(args.datapath, 'cs_data/cs_{}_{}_{}_{}_{}/'.format(args.dataset, args.seq_len_x,
+                                                                                  args.seq_len_y, args.mon_rate,
+                                                                                  args.fs))
     if not os.path.exists(stored_path):
         os.makedirs(stored_path)
 
