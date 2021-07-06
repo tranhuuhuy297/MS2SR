@@ -40,7 +40,10 @@ def main():
     mon_rate = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20]
     if args.test:
         CS = [0, 1]
-        testset = [0, 1, 2, 3, 4, 5]
+        if args.dataset == 'abilene':
+            testset = [0, 1, 2, 3, 4, 5]
+        else:
+            testset = [0, 1, 2, 3, 4]
     else:
         CS = [1]
         testset = [0]
