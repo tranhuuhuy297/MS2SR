@@ -289,9 +289,6 @@ def get_dataloader(args):
         top_k_index = np.argsort(means)[::-1]
         top_k_index = top_k_index[:int(args.mon_rate * train.shape[1] / 100)]
 
-        if args.top_k_random:
-            top_k_index = np.random.randint(X.shape[1], size=top_k_index.shape[0])
-
         print('Data preprocessing: TRAINSET')
         trainset = data_preprocessing(data=train, topk_index=top_k_index, args=args, gen_times=10, scaler_top_k=None)
         train_scaler = trainset['Scaler_topk']
