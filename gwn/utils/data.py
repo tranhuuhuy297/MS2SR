@@ -285,6 +285,7 @@ def get_dataloader(args):
     saved_test_path = os.path.join(stored_path, 'test.pkl')
     if not os.path.exists(saved_train_path):
         train, val, test_list = train_test_split(X)
+        # obtain topk largest flows index from training set
         means = np.mean(train, axis=0)
         top_k_index = np.argsort(means)[::-1]
         top_k_index = top_k_index[:int(args.mon_rate * train.shape[1] / 100)]

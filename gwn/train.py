@@ -34,7 +34,7 @@ def get_psi(args, samples=4000, iterator=100):
 
     D = DCTDictionary(size_D, size_D)
 
-    psi, _ = KSVD(D, MatchingPursuit, int(args.random_rate / 100 * X.shape[1])).fit(X_temp, iterator)
+    psi, _ = KSVD(D, MatchingPursuit, int(args.mon_rate / 100 * X.shape[1])).fit(X_temp, iterator)
     return psi
 
 

@@ -12,7 +12,7 @@ def get_args():
     parser.add_argument('--dataset', type=str, default='abilene_tm',
                         choices=['abilene_tm', 'geant_tm', 'brain_tm', 'sinet_sys_tm'])
     parser.add_argument('--k', type=int, default=1, help='granularity scale', choices=[1, 2, 3])
-    parser.add_argument('--random_rate', type=int, default=10)
+    parser.add_argument('--mon_rate', type=int, default=10)
     parser.add_argument('--datapath', type=str, default='../../data')
     parser.add_argument('--type', type=str, default='p2', choices=['p2'])
     parser.add_argument('--trunk', type=int, default=3)
@@ -90,7 +90,7 @@ def print_args(args):
     print('---------------------------------------------------------')
     print('    - dataset                :', args.dataset)
     print('    - granularity scale      :', args.k)
-    print('    - random measure rate    : {}%'.format(args.random_rate))
+    print('    - random measure rate    : {}%'.format(args.mon_rate))
     print('    - num_series             :', args.nSeries)
     print('    - train size             : {}x{}'.format(args.train_size, args.nSeries))
     print('    - val size               : {}x{}'.format(args.val_size, args.nSeries))

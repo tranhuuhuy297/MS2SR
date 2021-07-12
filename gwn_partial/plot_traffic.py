@@ -11,7 +11,7 @@ def main(args, **kwargs):
     train_size = int(X.shape[0] * 0.7)
     if (args.cs):
         random_time_step = rd.randint(0, train_size)
-        top_k = int(args.random_rate / 100 * X.shape[1])
+        top_k = int(args.mon_rate / 100 * X.shape[1])
         if (top_k < 1): top_k = 1
         top_k_index = utils.largest_indices(X[random_time_step], top_k)
         top_k_index = np.sort(top_k_index)[0]

@@ -96,7 +96,7 @@ class TrafficDataset(Dataset):
         # get top k biggest
         if top_k_index is None:
             random_time_step = rd.randint(0, len(X))
-            self.top_k_index = largest_indices(X[random_time_step], int(args.random_rate / 100 * X.shape[1]))
+            self.top_k_index = largest_indices(X[random_time_step], int(args.mon_rate / 100 * X.shape[1]))
             self.top_k_index = np.sort(top_k_index)[0]
         else:
             self.top_k_index = top_k_index
@@ -307,7 +307,7 @@ def get_dataloader(args):
     random_time_step = rd.randint(0, len(train))
     # get top k biggest
 
-    top_k_index = largest_indices(train[random_time_step], int(args.random_rate / 100 * train.shape[1]))
+    top_k_index = largest_indices(train[random_time_step], int(args.mon_rate / 100 * train.shape[1]))
     top_k_index = np.sort(top_k_index)[0]
 
     # Training set

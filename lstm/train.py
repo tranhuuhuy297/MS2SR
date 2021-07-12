@@ -37,14 +37,14 @@ def get_psi(args, samples=10000, iterator=100):
 
     D = RandomDictionary(size_D, size_D)
 
-    psi, _ = KSVD(D, MatchingPursuit, int(args.random_rate / 100 * X.shape[1])).fit(X_temp, iterator)
+    psi, _ = KSVD(D, MatchingPursuit, int(args.mon_rate / 100 * X.shape[1])).fit(X_temp, iterator)
 
     return psi
 
 
 def get_G(args):
     X = utils.load_raw(args)
-    k_sparse = int(args.random_rate / 100 * X.shape[1])
+    k_sparse = int(args.mon_rate / 100 * X.shape[1])
     G = np.zeros((k_sparse, X.shape[1]))
 
     for i in range(G.shape[1]):
@@ -59,7 +59,7 @@ def get_G(args):
 
 def get_R(args):
     X = utils.load_raw(args)
-    k_sparse = int(args.random_rate / 100 * X.shape[1])
+    k_sparse = int(args.mon_rate / 100 * X.shape[1])
     R = np.zeros((k_sparse, X.shape[1]))
 
     for i in range(R.shape[1]):
