@@ -46,7 +46,7 @@ def main():
 
     if args.test:
         CS = [0, 1]
-        if args.dataset == 'abilene':
+        if args.dataset == 'abilene_tm':
             testset = [0, 1, 2, 3, 4, 5]
         else:
             testset = [0, 1, 2, 3, 4]
