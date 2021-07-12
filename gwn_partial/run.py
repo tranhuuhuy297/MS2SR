@@ -31,6 +31,7 @@ def get_args():
                                                                                     'gt',
                                                                                     'pred'],
                         default='train')
+    parser.add_argument('--mon_rate', type=int, default=5, choices=[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
 
     args = parser.parse_args()
     return args
@@ -40,7 +41,11 @@ def main():
     # get args
     args = get_args()
     dataset_name = args.dataset
-    mon_rate = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20]
+    if args.mon_rate == 0:
+        mon_rate = [1, 2, 3, 4, 5]
+    else:
+        mon_rate = [args.mon_rate]
+
     if args.test:
         CS = [0, 1]
         if args.dataset == 'abilene':
