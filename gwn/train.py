@@ -215,7 +215,7 @@ def main(args, **model_kwargs):
     test_met_df = pd.DataFrame(test_met, columns=['rse', 'mae', 'mse', 'mape', 'rmse']).rename_axis('t')
     test_met_df.round(6).to_csv(os.path.join(logger.log_dir, 'summarized_test_metrics_{}.csv'.format(args.testset)))
     print('Prediction Accuracy:')
-    print(utils.summary(logger.log_dir))
+    print(test_met_df)
 
     test_met = []
     for t in range(y_cs.shape[0]):

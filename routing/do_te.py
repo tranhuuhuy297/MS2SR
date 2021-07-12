@@ -203,11 +203,11 @@ def ls2sr_p0(yhat, y_gt, x_gt, G, segments, te_step, args):
     print(
         'Route changes: Avg {:.3f} std {:.3f}'.format(np.mean(rc),
                                                       np.std(rc)))
-    print('P0 Heuristic    {}      | {:.3f}   {:.3f}   {:.3f}   {:.3f}'.format(args.model,
-                                                                               np.min(mlu),
-                                                                               np.mean(mlu),
-                                                                               np.max(mlu),
-                                                                               np.std(mlu)))
+    print('ls2sr p0    {}      | {:.3f}   {:.3f}   {:.3f}   {:.3f}'.format(args.model,
+                                                                           np.min(mlu),
+                                                                           np.mean(mlu),
+                                                                           np.max(mlu),
+                                                                           np.std(mlu)))
 
     save_results(args.log_dir, 'test_{}_p0_ls2sr'.format(args.testset), mlu, rc)
 
@@ -245,11 +245,11 @@ def gwn_ls2sr(yhat, y_gt, graph, te_step, args):
     print('Route changes: Avg {:.3f} std {:.3f}'.format(np.sum(route_changes) /
                                                         (args.seq_len_y * route_changes.shape[0]),
                                                         np.std(route_changes)))
-    print('P2 ls2sr    {}      | {:.3f}   {:.3f}   {:.3f}   {:.3f}'.format(args.model,
-                                                                           np.min(mlu),
-                                                                           np.mean(mlu),
-                                                                           np.max(mlu),
-                                                                           np.std(mlu)))
+    print('gwn ls2sr    {}      | {:.3f}   {:.3f}   {:.3f}   {:.3f}'.format(args.model,
+                                                                            np.min(mlu),
+                                                                            np.mean(mlu),
+                                                                            np.max(mlu),
+                                                                            np.std(mlu)))
     congested = mlu[mlu >= 1.0].size
     print('Congestion_rate: {}/{}'.format(congested, mlu.size))
 
@@ -289,7 +289,7 @@ def gt_ls2sr(y_gt, graph, te_step, args):
     print('Route changes: Avg {:.3f} std {:.3f}'.format(np.sum(route_changes) /
                                                         (args.seq_len_y * route_changes.shape[0]),
                                                         np.std(route_changes)))
-    print('P2 ls2sr    {}      | {:.3f}   {:.3f}   {:.3f}   {:.3f}'.format(args.model,
+    print('gt ls2sr    {}      | {:.3f}   {:.3f}   {:.3f}   {:.3f}'.format(args.model,
                                                                            np.min(mlu),
                                                                            np.mean(mlu),
                                                                            np.max(mlu),
@@ -345,53 +345,53 @@ def last_step_ls2sr(y_gt, x_gt, graph, te_step, args):
     np.save(os.path.join(args.log_dir, 'test_{}_ls2sr_last_step_dyn'.format(args.testset)), dynamicity)
 
 
-def prophet_predicted_solver(x_gt, y_gt, graph, te_step, args):
-    print('ls2sr solver')
-
-    prophet = Prophet()
-
-    def prophet_prediction(input):
-        prophet.fit(input)
-
-    results = []
-    solver = LS2SRSolver(graph=graph, args=args)
-
-    solution = None
-    dynamicity = np.zeros(shape=(te_step, 7))
-    for i in range(te_step):
-        mean = np.mean(y_gt[i], axis=1)
-        std_mean = np.std(mean)
-        std = np.std(y_gt[i], axis=1)
-        std_std = np.std(std)
-
-        maxmax_mean = np.max(y_gt[i]) / np.mean(y_gt[i])
-
-        theo_lamda = calculate_lamda(y_gt=y_gt[i])
-
-        pred_tm = yhat[i]
-        u, solution = p2_heuristic_solver(solver, tm=pred_tm,
-                                          gt_tms=y_gt[i], p_solution=solution, nNodes=args.nNodes)
-        dynamicity[i] = [np.sum(y_gt[i]), std_mean, std_std, np.sum(std), maxmax_mean, np.mean(u), theo_lamda]
-
-        _solution = np.copy(solution)
-        results.append((u, _solution))
-
-    mlu, solution = extract_results(results)
-    route_changes = get_route_changes_heuristic(solution)
-
-    print('Route changes: Avg {:.3f} std {:.3f}'.format(np.sum(route_changes) /
-                                                        (args.seq_len_y * route_changes.shape[0]),
-                                                        np.std(route_changes)))
-    print('P2 ls2sr    {}      | {:.3f}   {:.3f}   {:.3f}   {:.3f}'.format(args.model,
-                                                                           np.min(mlu),
-                                                                           np.mean(mlu),
-                                                                           np.max(mlu),
-                                                                           np.std(mlu)))
-    congested = mlu[mlu >= 1.0].size
-    print('Congestion_rate: {}/{}'.format(congested, mlu.size))
-
-    save_results(args.log_dir, 'test_{}_ls2sr_p2'.format(args.testset), mlu, route_changes)
-    np.save(os.path.join(args.log_dir, 'test_{}_ls2sr_p2_dyn'.format(args.testset)), dynamicity)
+# def prophet_predicted_solver(x_gt, y_gt, graph, te_step, args):
+#     print('ls2sr solver')
+#
+#     prophet = Prophet()
+#
+#     def prophet_prediction(input):
+#         prophet.fit(input)
+#
+#     results = []
+#     solver = LS2SRSolver(graph=graph, args=args)
+#
+#     solution = None
+#     dynamicity = np.zeros(shape=(te_step, 7))
+#     for i in range(te_step):
+#         mean = np.mean(y_gt[i], axis=1)
+#         std_mean = np.std(mean)
+#         std = np.std(y_gt[i], axis=1)
+#         std_std = np.std(std)
+#
+#         maxmax_mean = np.max(y_gt[i]) / np.mean(y_gt[i])
+#
+#         theo_lamda = calculate_lamda(y_gt=y_gt[i])
+#
+#         pred_tm = yhat[i]
+#         u, solution = p2_heuristic_solver(solver, tm=pred_tm,
+#                                           gt_tms=y_gt[i], p_solution=solution, nNodes=args.nNodes)
+#         dynamicity[i] = [np.sum(y_gt[i]), std_mean, std_std, np.sum(std), maxmax_mean, np.mean(u), theo_lamda]
+#
+#         _solution = np.copy(solution)
+#         results.append((u, _solution))
+#
+#     mlu, solution = extract_results(results)
+#     route_changes = get_route_changes_heuristic(solution)
+#
+#     print('Route changes: Avg {:.3f} std {:.3f}'.format(np.sum(route_changes) /
+#                                                         (args.seq_len_y * route_changes.shape[0]),
+#                                                         np.std(route_changes)))
+#     print('P2 ls2sr    {}      | {:.3f}   {:.3f}   {:.3f}   {:.3f}'.format(args.model,
+#                                                                            np.min(mlu),
+#                                                                            np.mean(mlu),
+#                                                                            np.max(mlu),
+#                                                                            np.std(mlu)))
+#     congested = mlu[mlu >= 1.0].size
+#     print('Congestion_rate: {}/{}'.format(congested, mlu.size))
+#
+#     save_results(args.log_dir, 'test_{}_ls2sr_p2'.format(args.testset), mlu, route_changes)
+#     np.save(os.path.join(args.log_dir, 'test_{}_ls2sr_p2_dyn'.format(args.testset)), dynamicity)
 
 
 def optimal_p0_solver(y_gt, G, segments, te_step, args):
@@ -410,7 +410,7 @@ def optimal_p0_solver(y_gt, G, segments, te_step, args):
     solution = np.reshape(solution, newshape=(-1, args.nNodes, args.nNodes, args.nNodes))
     rc = get_route_changes(solution, G)
     print('Route changes: Avg {:.3f} std {:.3f}'.format(np.mean(rc), np.std(rc)))
-    print('Optimal              | {:.3f}   {:.3f}   {:.3f}   {:.3f}'.format(np.min(mlu),
+    print('Optimal p0           | {:.3f}   {:.3f}   {:.3f}   {:.3f}'.format(np.min(mlu),
                                                                             np.mean(mlu),
                                                                             np.max(mlu),
                                                                             np.std(mlu)))
@@ -440,10 +440,10 @@ def optimal_p1_solver(y_gt, G, segments, te_step, args):
     mlu, solution = extract_results(results)
     rc = get_route_changes(solution, G)
     print('Route changes: Avg {:.3f} std {:.3f}'.format(np.mean(rc), np.std(rc)))
-    print('P1                   | {:.3f}   {:.3f}   {:.3f}   {:.3f}'.format(np.min(mlu),
-                                                                            np.mean(mlu),
-                                                                            np.max(mlu),
-                                                                            np.std(mlu)))
+    print('Optimal p1               | {:.3f}   {:.3f}   {:.3f}   {:.3f}'.format(np.min(mlu),
+                                                                                np.mean(mlu),
+                                                                                np.max(mlu),
+                                                                                np.std(mlu)))
 
     congested = mlu[mlu >= 1.0].size
     print('Congestion_rate: {}/{}'.format(congested, mlu.size))
@@ -473,10 +473,10 @@ def optimal_p2_solver(y_gt, G, segments, te_step, args):
     mlu, solution_optimal_p2 = extract_results(results)
     rc = get_route_changes(solution_optimal_p2, G)
     print('Route changes: Avg {:.3f} std {:.3f}'.format(np.mean(rc), np.std(rc)))
-    print('P2                   | {:.3f}   {:.3f}   {:.3f}   {:.3f}'.format(np.min(mlu),
-                                                                            np.mean(mlu),
-                                                                            np.max(mlu),
-                                                                            np.std(mlu)))
+    print('Optimal p2                | {:.3f}   {:.3f}   {:.3f}   {:.3f}'.format(np.min(mlu),
+                                                                                 np.mean(mlu),
+                                                                                 np.max(mlu),
+                                                                                 np.std(mlu)))
     congested = mlu[mlu >= 1.0].size
     print('Congestion_rate: {}/{}'.format(congested, mlu.size))
 
@@ -505,10 +505,10 @@ def gwn_p2(y_hat, y_gt, G, segments, te_step, args):
     mlu, solution_optimal_p2 = extract_results(results)
     rc = get_route_changes(solution_optimal_p2, G)
     print('Route changes: Avg {:.3f} std {:.3f}'.format(np.mean(rc), np.std(rc)))
-    print('P2                   | {:.3f}   {:.3f}   {:.3f}   {:.3f}'.format(np.min(mlu),
-                                                                            np.mean(mlu),
-                                                                            np.max(mlu),
-                                                                            np.std(mlu)))
+    print('gwn p2                | {:.3f}   {:.3f}   {:.3f}   {:.3f}'.format(np.min(mlu),
+                                                                             np.mean(mlu),
+                                                                             np.max(mlu),
+                                                                             np.std(mlu)))
     congested = mlu[mlu >= 1.0].size
     print('Congestion_rate: {}/{}'.format(congested, mlu.size))
 
@@ -538,10 +538,10 @@ def optimal_p3_solver(y_gt, G, segments, te_step, args):
     mlu, solution_optimal_p3 = extract_results(results)
     rc = get_route_changes(solution_optimal_p3, G)
     print('Route changes: Avg {:.3f} std {:.3f}'.format(np.mean(rc), np.std(rc)))
-    print('P3                   | {:.3f}   {:.3f}   {:.3f}   {:.3f}'.format(np.min(mlu),
-                                                                            np.mean(mlu),
-                                                                            np.max(mlu),
-                                                                            np.std(mlu)))
+    print('Optimal p3             | {:.3f}   {:.3f}   {:.3f}   {:.3f}'.format(np.min(mlu),
+                                                                              np.mean(mlu),
+                                                                              np.max(mlu),
+                                                                              np.std(mlu)))
     congested = mlu[mlu >= 1.0].size
     print('Congestion_rate: {}/{}'.format(congested, mlu.size))
 
