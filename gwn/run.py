@@ -40,7 +40,7 @@ def main():
     dataset_name = args.dataset
     # mon_rate = [1, 2, 3, 4, 5]
     if args.mon_rate == 0:
-        mon_rate = [1, 2, 3, 4, 5]
+        mon_rate = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
     else:
         mon_rate = [args.mon_rate]
 
