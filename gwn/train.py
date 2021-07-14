@@ -116,7 +116,8 @@ def main(args, **model_kwargs):
                     x = batch['x_top_k']
                     y = batch['y_top_k']
 
-                    if y.max() == 0: continue
+                    if y.max() == 0:
+                        continue
                     loss, rse, mae, mse, mape, rmse = engine.train(x, y)
                     train_loss.append(loss)
                     train_rse.append(rse)
