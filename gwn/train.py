@@ -1,5 +1,7 @@
 import sys
 
+import numpy as np
+
 sys.path.append('..')
 
 import time
@@ -202,12 +204,11 @@ def main(args, **model_kwargs):
         y_cs = np.zeros(shape=(ygt_shape[0], 1, ygt_shape[-1]))
         y_cs[:, :, top_k_index] = yhat
 
-    y_cs[y_cs < 0] = 0
-
     x_gt = torch.from_numpy(x_gt).to(args.device)
     y_gt = torch.from_numpy(y_gt).to(args.device)
     y_cs = torch.from_numpy(y_cs).to(args.device)
-    y_cs[y_cs < 0] = 0
+    y_cs[y_cs < 0.0] = 0.0
+
     test_met = []
     for i in range(y_cs.shape[1]):
         pred = y_cs[:, i, :]
@@ -258,6 +259,12 @@ def main(args, **model_kwargs):
     x_gt = x_gt.cpu().data.numpy()  # [timestep, seq_x, seq_y]
     y_gt = y_gt.cpu().data.numpy()
     y_cs = y_cs.cpu().data.numpy()
+    y_real = y_real.cpu().data.numpy()
+
+    np.save(x_gt, os.path.join(logger.log_dir, 'x_gt_test_{}'.format(args.test)))
+    np.save(y_gt, os.path.join(logger.log_dir, 'y_gt_test_{}'.format(args.test)))
+    np.save(y_cs, os.path.join(logger.log_dir, 'y_cs_test_{}'.format(args.test)))
+    np.save(y_real, os.path.join(logger.log_dir, 'y_real_test_{}'.format(args.test)))
 
     if args.run_te != 'None':
         run_te(x_gt, y_gt, y_cs, args)

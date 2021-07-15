@@ -190,8 +190,6 @@ def data_preprocessing(data, topk_index, args, gen_times=5, scaler_top_k=None):
     if scaler_top_k is None:
         scaler_top_k = StandardScaler_torch()
         scaler_top_k.fit(X_top_k)
-    else:
-        scaler_top_k = scaler_top_k
 
     X_scaled_top_k = scaler_top_k.transform(X_top_k)
 
