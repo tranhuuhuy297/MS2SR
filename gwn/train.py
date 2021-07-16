@@ -230,7 +230,7 @@ def main(args, **model_kwargs):
 
     # Calculate metrics for top 1% flows
     for tk in range(1, 5, 1):
-        means = np.mean(y_real['train_1'], axis=0)
+        means = np.mean(y_real, axis=0)
         top_idx = np.argsort(means)[::-1]
         top_idx = top_idx[:int(tk * y_real['train_1'].shape[1] / 100)]
 
