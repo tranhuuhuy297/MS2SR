@@ -229,8 +229,11 @@ def main(args, **model_kwargs):
     test_met_df.round(6).to_csv(os.path.join(logger.log_dir, 'test_metrics_{}_cs_{}.csv'.format(args.testset, args.cs)))
 
     # Calculate metrics for top 1% flows
-    yreal_np = y_real.cpu().data.numpy()
+    y_real = y_real.cpu().data.numpy()
+    yreal_np = np.copy(y_real)
     yreal_np = np.squeeze(yreal_np, axis=1)
+    y_real = torch.from_numpy(y_real).to(args.device)
+
     for tk in range(1, 5, 1):
 
         means = np.mean(yreal_np, axis=0)
