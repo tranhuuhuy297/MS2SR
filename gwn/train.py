@@ -1,7 +1,5 @@
 import sys
 
-import numpy as np
-
 sys.path.append('..')
 
 import time
@@ -261,10 +259,10 @@ def main(args, **model_kwargs):
     y_cs = y_cs.cpu().data.numpy()
     y_real = y_real.cpu().data.numpy()
 
-    np.save(os.path.join(logger.log_dir, 'x_gt_test_{}'.format(args.test)), x_gt)
-    np.save(os.path.join(logger.log_dir, 'y_gt_test_{}'.format(args.test)), y_gt)
-    np.save(os.path.join(logger.log_dir, 'y_cs_test_{}'.format(args.test)), y_cs)
-    np.save(os.path.join(logger.log_dir, 'y_real_test_{}'.format(args.test)), y_real)
+    np.save(os.path.join(logger.log_dir, 'x_gt_test_{}'.format(args.testset)), x_gt)
+    np.save(os.path.join(logger.log_dir, 'y_gt_test_{}'.format(args.testset)), y_gt)
+    np.save(os.path.join(logger.log_dir, 'y_cs_test_{}'.format(args.testset)), y_cs)
+    np.save(os.path.join(logger.log_dir, 'y_real_test_{}'.format(args.testset)), y_real)
 
     if args.run_te != 'None':
         run_te(x_gt, y_gt, y_cs, args)
