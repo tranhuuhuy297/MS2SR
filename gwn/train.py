@@ -239,6 +239,7 @@ def main(args, **model_kwargs):
         means = np.mean(yreal_np, axis=0)
         top_idx = np.argsort(means)[::-1]
         top_idx = top_idx[:int(tk * yreal_np.shape[1] / 100)]
+        top_idx = torch.from_numpy(top_idx).to(args.device)
 
         ycs_1 = y_cs[:, :, top_idx]
         y_real_1 = y_real[:, :, top_idx]
