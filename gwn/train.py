@@ -229,29 +229,33 @@ def main(args, **model_kwargs):
     test_met_df.round(6).to_csv(os.path.join(logger.log_dir, 'test_metrics_{}_cs_{}.csv'.format(args.testset, args.cs)))
 
     # Calculate metrics for top 1% flows
-    nflow_mon_rate_1 = int(total_series * 1 / 100)
-    top1_idx = top_k_index[:nflow_mon_rate_1]
-    ycs_1 = y_cs[:, :, top1_idx]
-    y_real_1 = y_real[:, :, top1_idx]
+    for tk in range(1, 5, 1):
+        means = np.mean(y_real['train_1'], axis=0)
+        top_idx = np.argsort(means)[::-1]
+        top_idx = top_idx[:int(tk * y_real['train_1'].shape[1] / 100)]
 
-    test_met = []
-    for i in range(y_cs.shape[1]):
-        pred = ycs_1[:, i, :]
-        real = y_real_1[:, i, :]
-        test_met.append([x.item() for x in utils.calc_metrics(pred, real)])
-    test_met_df = pd.DataFrame(test_met, columns=['rse', 'mae', 'mse', 'mape', 'rmse']).rename_axis('t')
-    test_met_df.round(6).to_csv(os.path.join(logger.log_dir, 'summarized_test_metrics_top1_{}_cs_{}.csv'.format(
-        args.testset, args.cs)))
+        ycs_1 = y_cs[:, :, top_idx]
+        y_real_1 = y_real[:, :, top_idx]
 
-    test_met = []
-    for t in range(y_cs.shape[0]):
+        test_met = []
         for i in range(y_cs.shape[1]):
-            pred = ycs_1[t, i, :]
-            real = y_real_1[t, i, :]
+            pred = ycs_1[:, i, :]
+            real = y_real_1[:, i, :]
             test_met.append([x.item() for x in utils.calc_metrics(pred, real)])
-    test_met_df = pd.DataFrame(test_met, columns=['rse', 'mae', 'mse', 'mape', 'rmse']).rename_axis('t')
-    test_met_df.round(6).to_csv(os.path.join(logger.log_dir, 'test_metrics_top1_{}_cs_{}.csv'.format(
-        args.testset, args.cs)))
+        test_met_df = pd.DataFrame(test_met, columns=['rse', 'mae', 'mse', 'mape', 'rmse']).rename_axis('t')
+        test_met_df.round(6).to_csv(
+            os.path.join(logger.log_dir, 'summarized_test_metrics_top1_{}_cs_{}_tk_{}.csv'.format(
+                args.testset, args.cs, tk)))
+
+        test_met = []
+        for t in range(y_cs.shape[0]):
+            for i in range(y_cs.shape[1]):
+                pred = ycs_1[t, i, :]
+                real = y_real_1[t, i, :]
+                test_met.append([x.item() for x in utils.calc_metrics(pred, real)])
+        test_met_df = pd.DataFrame(test_met, columns=['rse', 'mae', 'mse', 'mape', 'rmse']).rename_axis('t')
+        test_met_df.round(6).to_csv(os.path.join(logger.log_dir, 'test_metrics_top1_{}_cs_{}_tk.csv'.format(
+            args.testset, args.cs, tk)))
 
     # run traffic engineering
     x_gt = x_gt.cpu().data.numpy()  # [timestep, seq_x, seq_y]
