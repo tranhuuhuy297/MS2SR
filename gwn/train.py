@@ -229,10 +229,13 @@ def main(args, **model_kwargs):
     test_met_df.round(6).to_csv(os.path.join(logger.log_dir, 'test_metrics_{}_cs_{}.csv'.format(args.testset, args.cs)))
 
     # Calculate metrics for top 1% flows
+    yreal_np = y_real.cpu().data.numpy()
+    yreal_np = np.squeeze(yreal_np, axis=1)
     for tk in range(1, 5, 1):
-        means = np.mean(y_real, axis=0)
+
+        means = np.mean(yreal_np, axis=0)
         top_idx = np.argsort(means)[::-1]
-        top_idx = top_idx[:int(tk * y_real['train_1'].shape[1] / 100)]
+        top_idx = top_idx[:int(tk * yreal_np.shape[1] / 100)]
 
         ycs_1 = y_cs[:, :, top_idx]
         y_real_1 = y_real[:, :, top_idx]
