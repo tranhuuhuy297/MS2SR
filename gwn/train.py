@@ -229,26 +229,20 @@ def main(args, **model_kwargs):
     test_met_df.round(6).to_csv(os.path.join(logger.log_dir, 'test_metrics_{}_cs_{}.csv'.format(args.testset, args.cs)))
 
     # Calculate metrics for top 1% flows
-    y_real = y_real.cpu().data.numpy()
-    yreal_np = np.copy(y_real)
-    yreal_np = np.squeeze(yreal_np, axis=1)
-    y_real = torch.from_numpy(y_real).to(args.device)
 
-    for tk in range(1, 5, 1):
-
-        means = np.mean(yreal_np, axis=0)
-        top_idx = np.argsort(means)[::-1]
-        top_idx = top_idx[:int(tk * yreal_np.shape[1] / 100)]
-        top_idx = torch.from_numpy(top_idx).to(args.device)
+    for tk in [1, 2, 3, 4, 5]:
+        y_real = y_real.squeeze(dim=1)
+        means = torch.mean(y_real, dim=0)
+        top_idx = torch.argsort(means, descending=True)
+        top_idx = top_idx[:int(tk * y_real.shape[1] / 100)]
 
         ycs_1 = y_cs[:, :, top_idx]
-        y_real_1 = y_real[:, :, top_idx]
+        y_real_1 = y_real[:, top_idx]
 
         test_met = []
-        for i in range(y_cs.shape[1]):
-            pred = ycs_1[:, i, :]
-            real = y_real_1[:, i, :]
-            test_met.append([x.item() for x in utils.calc_metrics(pred, real)])
+        pred = ycs_1[:, 0, :]
+        real = y_real_1
+        test_met.append([x.item() for x in utils.calc_metrics(pred, real)])
         test_met_df = pd.DataFrame(test_met, columns=['rse', 'mae', 'mse', 'mape', 'rmse']).rename_axis('t')
         test_met_df.round(6).to_csv(
             os.path.join(logger.log_dir, 'summarized_test_metrics_top1_{}_cs_{}_tk_{}.csv'.format(
@@ -256,10 +250,9 @@ def main(args, **model_kwargs):
 
         test_met = []
         for t in range(y_cs.shape[0]):
-            for i in range(y_cs.shape[1]):
-                pred = ycs_1[t, i, :]
-                real = y_real_1[t, i, :]
-                test_met.append([x.item() for x in utils.calc_metrics(pred, real)])
+            pred = ycs_1[t, 0, :]
+            real = y_real_1[t, :]
+            test_met.append([x.item() for x in utils.calc_metrics(pred, real)])
         test_met_df = pd.DataFrame(test_met, columns=['rse', 'mae', 'mse', 'mape', 'rmse']).rename_axis('t')
         test_met_df.round(6).to_csv(os.path.join(logger.log_dir, 'test_metrics_top1_{}_cs_{}_tk.csv'.format(
             args.testset, args.cs, tk)))
