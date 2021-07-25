@@ -1,35 +1,14 @@
 import os
 import sys
-
-from state.EdgeDemandState import EdgeDemandStateTree
-from state.SavedState import SavedState
-
-lib_path = os.path.abspath(os.path.join('core'))
-sys.path.append(lib_path)
-
-lib_path = os.path.abspath(os.path.join('io'))
-sys.path.append(lib_path)
-from DemandsData import DemandsData
-
 import random
 import time
 
-lib_path = os.path.abspath(os.path.join('state'))
-sys.path.append(lib_path)
-from FlowState import FlowStateRecomputeDAG, FlowStateRecomputeDAGOnCommit
-from EdgeDemandState import EdgeDemandStateTree
-from PathState import PathState
+from state import *
+from neighborhood import *
+from core import *
+from demand import DemandsData
 
-lib_path = os.path.abspath(os.path.join('constraint'))
-sys.path.append(lib_path)
-from MaxLoad import MaxLoad
-
-lib_path = os.path.abspath(os.path.join('neighborhood'))
-sys.path.append(lib_path)
-from Insert import Insert
-from Replace import Replace
-from Remove import Remove
-from Reset import Reset
+from constraint import MaxLoad
 
 
 class LoadOptimizer:

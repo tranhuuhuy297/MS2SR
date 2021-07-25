@@ -1,6 +1,6 @@
 import os, sys
 
-lib_path = os.path.abspath(os.path.join('io'))
+lib_path = os.path.abspath(os.path.join('demand'))
 sys.path.append(lib_path)
 
 from DemandsData import DemandsData
