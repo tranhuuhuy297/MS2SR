@@ -3,12 +3,11 @@ import sys
 import random
 import time
 
-from state import *
-from neighborhood import *
-from core import *
-from demand import DemandsData
-
-from constraint import MaxLoad
+from .state import *
+from .neighborhood import *
+from .core import *
+from .demand import DemandsData
+from .constraint import MaxLoad
 
 
 class LoadOptimizer:
