@@ -3,7 +3,7 @@ import os, sys
 lib_path = os.path.abspath(os.path.join('demand'))
 sys.path.append(lib_path)
 
-from TrialState import TrialState
+from .TrialState import TrialState
 
 
 class PathState(TrialState):

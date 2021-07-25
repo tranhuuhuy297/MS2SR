@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from ArrayState import ArrayStateFloat
+from .ArrayState import ArrayStateFloat
 
 
 class FlowStateChecker(ArrayStateFloat):

@@ -1,5 +1,5 @@
 from typing import overload
-from TrialState import TrialState
+from .TrialState import TrialState
 
 
 class ArrayStateFloat(TrialState):
