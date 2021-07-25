@@ -23,13 +23,13 @@ def get_args():
     parser.add_argument('--test', action='store_true')
     parser.add_argument('--run_te', type=str, choices=['None', 'gwn_ls2sr', 'gt_ls2sr', 'p0', 'p1', 'p2', 'gwn_p2',
                                                        'p3', 'onestep', 'prophet', 'laststep', 'laststep_ls2sr',
-                                                       'firststep', 'or'],
+                                                       'firststep', 'or', 'gwn_srls'],
                         default='None')
     parser.add_argument('--device', type=str, default='cuda:0')
-    parser.add_argument('--fs', help='Flow selection strategiy', type=str, choices=['rand',
-                                                                                    'prand',
-                                                                                    'gt',
-                                                                                    'pred'],
+    parser.add_argument('--fs', help='Flow selection strategy', type=str, choices=['rand',
+                                                                                   'prand',
+                                                                                   'gt',
+                                                                                   'pred'],
                         default='train')
     parser.add_argument('--mon_rate', type=int, default=0, choices=[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
 

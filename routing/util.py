@@ -91,11 +91,18 @@ def sort_paths(graph, paths):
     return paths
 
 
-def get_paths_from_sulution(graph, solution, i, j):
+def get_paths_from_solution(graph, solution, i, j):
+    n = solution.shape[0]
     if i == j:
         list_k = [i]
-    else:
+    elif len(solution[i, j]) < n:  # handling srls solution
+        if len(solution[i, j]) == 2:
+            list_k = [i]
+        else:
+            list_k = solution[i, j][1:-1]
+    else:  # handling solution in shape of nxnxn
         list_k = np.where(solution[i, j] == 1.0)[0]
+
     paths = []
     for k in list_k:
         path = []
