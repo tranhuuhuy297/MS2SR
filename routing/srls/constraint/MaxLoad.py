@@ -1,10 +1,6 @@
 import os, sys
 
-lib_path = os.path.abspath(os.path.join('state'))
-sys.path.append(lib_path)
-
-from TrialState import Trial, Objective
-
+from ..state import TrialState, Trial, Objective
 
 class MaxLoad(Trial, Objective):
     def __init__(self, nNodes, nEdges, capacityData, flowState, sp):
