@@ -1,10 +1,4 @@
-import os, sys
-
-lib_path = os.path.abspath(os.path.join('core'))
-sys.path.append(lib_path)
-
-from Neighborhood import Neighborhood
-
+from ..core import Neighborhood
 
 class Insert(Neighborhood):
     def __init__(self, nNodes, pathState):
