@@ -187,7 +187,7 @@ class LoadOptimizer:
         return paths
 
     def evaluate(self, srPaths, TM):
-        maxFlow = 0
+        mlu = 0
         values = [0] * self.nEdges
         for i in range(self.nNodes):
             for j in range(self.nNodes):
@@ -197,10 +197,10 @@ class LoadOptimizer:
                         m = srPaths[i][j][k + 1]
                         paths = self.sp.pathEdges[n][m]
                         nPath = self.sp.nPaths[n][m]
-                        increment = TM[n][m] / nPath
+                        increment = TM[i][j] / nPath
                         for path in paths:
                             for edge in path:
-                                values[edge] += increment
-                                if values[edge] > maxFlow:
-                                    maxFlow = values[edge]
-        return maxFlow
+                                values[edge] += increment / self.capacity.capacity[edge]
+                                if values[edge] > mlu:
+                                    mlu = values[edge]
+        return mlu

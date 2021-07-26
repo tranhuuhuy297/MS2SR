@@ -1,5 +1,6 @@
 from ..core import Neighborhood
 
+
 class Insert(Neighborhood):
     def __init__(self, nNodes, pathState):
         self.nNodes = nNodes
@@ -24,7 +25,7 @@ class Insert(Neighborhood):
 
     def hasNext(self):
         return (self.size < self.maxDetourSize) & (
-                    ((self.node == self.nNodes - 1) & (self.position == self.size - 1)) == False)
+                ((self.node == self.nNodes - 1) & (self.position == self.size - 1)) == False)
 
     def next(self):
         self.node += 1
