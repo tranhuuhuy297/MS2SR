@@ -70,6 +70,7 @@ def main():
                 if args.run_te != 'None':
                     cmd += ' --run_te {}'.format(args.run_te)
 
+                print(cmd)
                 os.system(cmd)
                 iteration.set_description(
                     'Dataset {} mon_rate: {} - testset {} - cs {}'.format(dataset_name, mon_rate[d], test, cs))

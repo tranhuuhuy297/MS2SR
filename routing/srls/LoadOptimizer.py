@@ -195,12 +195,14 @@ class LoadOptimizer:
                     for k in range(len(srPaths[i][j]) - 1):
                         n = srPaths[i][j][k]
                         m = srPaths[i][j][k + 1]
+
                         paths = self.sp.pathEdges[n][m]
                         nPath = self.sp.nPaths[n][m]
-                        increment = TM[i][j] / nPath
-                        for path in paths:
-                            for edge in path:
-                                values[edge] += increment / self.capacity.capacity[edge]
-                                if values[edge] > mlu:
-                                    mlu = values[edge]
+                        if m != n:
+                            increment = TM[i][j] / nPath
+                            for path in paths:
+                                for edge in path:
+                                    values[edge] += increment / self.capacity.capacity[edge]
+                                    if values[edge] > mlu:
+                                        mlu = values[edge]
         return mlu
