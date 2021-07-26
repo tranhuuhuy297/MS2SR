@@ -254,7 +254,7 @@ def main(args, **model_kwargs):
             real = y_real_1[t, :]
             test_met.append([x.item() for x in utils.calc_metrics(pred, real)])
         test_met_df = pd.DataFrame(test_met, columns=['rse', 'mae', 'mse', 'mape', 'rmse']).rename_axis('t')
-        test_met_df.round(6).to_csv(os.path.join(logger.log_dir, 'test_metrics_top1_{}_cs_{}_tk.csv'.format(
+        test_met_df.round(6).to_csv(os.path.join(logger.log_dir, 'test_metrics_top1_{}_cs_{}_tk_{}.csv'.format(
             args.testset, args.cs, tk)))
 
     # run traffic engineering
