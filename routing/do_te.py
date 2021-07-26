@@ -275,6 +275,7 @@ def createGraph_srls(NodesFile, EdgesFile):
                    capacity=row.bw,
                    delay=row.delay)
         G.edges[i, j]['index'] = index
+        capacity.append(row.bw)
         index += 1
 
     nEdges = G.number_of_edges()
