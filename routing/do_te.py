@@ -258,6 +258,13 @@ def gwn_ls2sr(yhat, y_gt, graph, te_step, args):
 
 
 def createGraph_srls(NodesFile, EdgesFile):
+    def addEdge(graph, src, dst, w, bw, delay, idx):
+        graph.add_edge(src, dst, weight=w,
+                       capacity=bw,
+                       delay=delay)
+        graph.edges[src, dst]['index'] = idx
+        capacity.append(bw)
+
     capacity = []
     G = nx.DiGraph()
     df = pd.read_csv(NodesFile, delimiter=' ')
@@ -271,12 +278,11 @@ def createGraph_srls(NodesFile, EdgesFile):
     for _, row in df.iterrows():
         i = row.src
         j = row.dest
-        G.add_edge(i, j, weight=row.weight,
-                   capacity=row.bw,
-                   delay=row.delay)
-        G.edges[i, j]['index'] = index
-        capacity.append(row.bw)
+        addEdge(G, i, j, row.weight, row.bw, row.delay, index)
         index += 1
+        if (j, i) not in G.edges:
+            addEdge(G, j, i, row.weight, row.bw, row.delay, index)
+            index += 1
 
     nEdges = G.number_of_edges()
     sPathNode = []
