@@ -316,7 +316,7 @@ def gwn_srls(yhat, y_gt, graphs, te_step, args):
     G, nNodes, nEdges, capacity, sp = graphs
 
     results = []
-    solver = SRLS(sp, capacity, nNodes, nEdges)
+    solver = SRLS(sp, capacity, nNodes, nEdges, args.timeout)
 
     dynamicity = np.zeros(shape=(te_step, 7))
     for i in tqdm(range(te_step)):
@@ -737,7 +737,7 @@ def p2_srls_solver(solver, tm, gt_tms, nNodes):
 
     try:
         solver.modifierTrafficMatrix(tm)  # solve backtrack solution (line 131)
-        solver.solve(1000)
+        solver.solve()
     except:
         print('ERROR in p2_srls_solver --> pass')
         pass

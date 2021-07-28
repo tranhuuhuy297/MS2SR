@@ -11,7 +11,7 @@ from .constraint import MaxLoad
 
 
 class LoadOptimizer:
-    def __init__(self, sp, capacity, nNodes, nEdges):
+    def __init__(self, sp, capacity, nNodes, nEdges, timeout):
         labels = []
         srcs = []
         dest = []
@@ -48,6 +48,8 @@ class LoadOptimizer:
                               Replace(self.nNodes, self.pathState)]
         self.kickNeighborhoods = [Reset(self.pathState), Remove(self.pathState)]
 
+        self.timeout = timeout
+
     def selectDemand(self):
         edge = self.maxLoad.selectRandomMaxEdge()
         return self.edgeDemandState.selectRandomDemand(edge)
@@ -61,15 +63,15 @@ class LoadOptimizer:
             neighborhood.next()
             neighborhood.apply()
 
-            if (self.pathState.nChanged > 0 & self.pathState.check()):
+            if self.pathState.nChanged > 0 & self.pathState.check():
                 score = self.maxLoad.score()
 
-                if (score == bestNeighborhoodLoad):
+                if score == bestNeighborhoodLoad:
                     nBestMoves += 1
-                    if (random.randint(0, nBestMoves) == 0):
+                    if random.randint(0, nBestMoves) == 0:
                         neighborhood.saveBest()
                 else:
-                    if (score < bestNeighborhoodLoad):
+                    if score < bestNeighborhoodLoad:
                         nBestMoves = 1
                         improvementFound = True
                         neighborhood.saveBest()
@@ -86,13 +88,12 @@ class LoadOptimizer:
             self.pathState.update()
             self.pathState.commit()
 
-    def startMoving(self, timeLimit):
-        startTime = time.time() * 1000000000
-        stopTime = startTime + timeLimit * 1000000
+    def startMoving(self):
+        startTime = time.time()
         bestLoad = self.maxLoad.score()
         nIterations = 0
         bestIteration = 0
-        while (time.time() * 1000000000 < stopTime):
+        while time.time() - startTime < self.timeout:
 
             nIterations += 1
             if (self.maxLoad.score() > bestLoad) & (nIterations > (bestIteration + 1000)):
@@ -111,7 +112,7 @@ class LoadOptimizer:
             improvementFound = False
             pNeighborhood = 0
 
-            while (improvementFound == False) & (pNeighborhood < len(self.neighborhoods)):
+            while (improvementFound is False) and (pNeighborhood < len(self.neighborhoods)):
                 neighborhood = self.neighborhoods[pNeighborhood]
                 improvementFound = self.visitNeighborhood(neighborhood, demand)
 
@@ -128,9 +129,9 @@ class LoadOptimizer:
 
                 pNeighborhood += 1
 
-    def solve(self, timeLimit):
+    def solve(self):
 
-        self.startMoving(timeLimit)
+        self.startMoving()
 
         self.bestPaths.restorePath()
         self.pathState.update()
