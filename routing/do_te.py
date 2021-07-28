@@ -610,7 +610,7 @@ def gwn_p2(y_hat, y_gt, G, segments, te_step, args):
     congested = mlu[mlu >= 1.0].size
     print('Congestion_rate: {}/{}'.format(congested, mlu.size))
 
-    save_results(args.log_dir, 'test_{}_gwn_p2'.format(args.testset), mlu, rc)
+    save_results(args.log_dir, 'test_{}_gwn_p2_cs_{}'.format(args.testset, args.cs), mlu, rc)
 
 
 def optimal_p3_solver(y_gt, G, segments, te_step, args):
@@ -841,8 +841,8 @@ def run_te(x_gt, y_gt, yhat, args):
     elif args.run_te == 'onestep':
         segments = compute_path(graph, args.dataset, args.datapath)
         one_step_predicted_solver(yhat, y_gt, graph, segments, te_step, args)
-    elif args.run_te == 'prophet':
-        prophet_predicted_solver(x_gt, y_gt, graph, te_step, args)
+    # elif args.run_te == 'prophet':
+    #     prophet_predicted_solver(x_gt, y_gt, graph, te_step, args)
     elif args.run_te == 'laststep':
         segments = compute_path(graph, args.dataset, args.datapath)
         last_step_solver(y_gt, x_gt, graph, segments, args)

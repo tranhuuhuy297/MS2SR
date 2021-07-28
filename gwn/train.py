@@ -228,7 +228,7 @@ def main(args, **model_kwargs):
     test_met_df = pd.DataFrame(test_met, columns=['rse', 'mae', 'mse', 'mape', 'rmse']).rename_axis('t')
     test_met_df.round(6).to_csv(os.path.join(logger.log_dir, 'test_metrics_{}_cs_{}.csv'.format(args.testset, args.cs)))
 
-    # Calculate metrics for top 1% flows
+    # Calculate metrics for top k% flows
 
     for tk in [1, 2, 3, 4, 5]:
         y_real = y_real.squeeze(dim=1)
