@@ -73,8 +73,12 @@ def main(args, **model_kwargs):
 
     train_loader, val_loader, test_loader, total_timesteps, total_series = utils.get_dataloader(args)
 
-    args.train_size, args.nSeries = train_loader.dataset.nsample, train_loader.dataset.nflows
-    args.val_size = val_loader.dataset.nsample
+    if not args.test:
+        args.train_size, args.nSeries = train_loader.dataset.nsample, train_loader.dataset.nflows
+        args.val_size = val_loader.dataset.nsample
+    else:
+        args.train_size, args.nSeries = test_loader.dataset.nsample, test_loader.dataset.nflows
+        args.val_size = 0
     args.test_size = test_loader.dataset.nsample
 
     in_dim = 1
@@ -93,7 +97,7 @@ def main(args, **model_kwargs):
     model.to(device)
     logger = utils.Logger(args)
 
-    engine = utils.Trainer.from_args(model, None, train_loader.dataset.scaler_topk, args)
+    engine = utils.Trainer.from_args(model, None, test_loader.dataset.scaler_topk, args)
 
     utils.print_args(args)
 
