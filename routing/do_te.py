@@ -355,6 +355,50 @@ def gwn_srls(yhat, y_gt, graphs, te_step, args):
     np.save(os.path.join(args.log_dir, 'test_{}_gwn_srls_dyn_cs_{}'.format(args.testset, args.cs)), dynamicity)
 
 
+def gt_srls(y_gt, graphs, te_step, args):
+    print('gt_srls')
+    G, nNodes, nEdges, capacity, sp = graphs
+
+    results = []
+    solver = SRLS(sp, capacity, nNodes, nEdges, args.timeout)
+
+    dynamicity = np.zeros(shape=(te_step, 7))
+    for i in tqdm(range(te_step)):
+        mean = np.mean(y_gt[i], axis=1)
+        std_mean = np.std(mean)
+        std = np.std(y_gt[i], axis=1)
+        std_std = np.std(std)
+
+        maxmax_mean = np.max(y_gt[i]) / np.mean(y_gt[i])
+
+        theo_lamda = calculate_lamda(y_gt=y_gt[i])
+
+        pred_tm = np.max(y_gt[i], axis=0, keepdims=True)
+        u, solution = p2_srls_solver(solver, tm=pred_tm, gt_tms=y_gt[i], nNodes=args.nNodes)
+        solution = np.asarray(solution)
+        dynamicity[i] = [np.sum(y_gt[i]), std_mean, std_std, np.sum(std), maxmax_mean, np.mean(u), theo_lamda]
+
+        _solution = np.copy(solution)
+        results.append((u, _solution))
+
+    mlu, solution = extract_results(results)
+    route_changes = get_route_changes(solution, G)
+
+    print('Route changes: Avg {:.3f} std {:.3f}'.format(np.sum(route_changes) /
+                                                        (args.seq_len_y * route_changes.shape[0]),
+                                                        np.std(route_changes)))
+    print('gt srls     {}      | {:.3f}   {:.3f}   {:.3f}   {:.3f}'.format(args.model,
+                                                                           np.min(mlu),
+                                                                           np.mean(mlu),
+                                                                           np.max(mlu),
+                                                                           np.std(mlu)))
+    congested = mlu[mlu >= 1.0].size
+    print('Congestion_rate: {}/{}'.format(congested, mlu.size))
+
+    save_results(args.log_dir, 'test_{}_gt_srls_cs_{}'.format(args.testset, args.cs), mlu, route_changes)
+    np.save(os.path.join(args.log_dir, 'test_{}_gt_srls_dyn_cs_{}'.format(args.testset, args.cs)), dynamicity)
+
+
 def gt_ls2sr(y_gt, graph, te_step, args):
     print('ls2sr p2')
 
@@ -821,6 +865,10 @@ def run_te(x_gt, y_gt, yhat, args):
         graphs = createGraph_srls(os.path.join(args.datapath, 'topo/{}_node.csv'.format(args.dataset)),
                                   os.path.join(args.datapath, 'topo/{}_edge.csv'.format(args.dataset)))
         gwn_srls(yhat, y_gt, graphs, te_step, args)
+    elif args.run_te == 'gt_srls':
+        graphs = createGraph_srls(os.path.join(args.datapath, 'topo/{}_node.csv'.format(args.dataset)),
+                                  os.path.join(args.datapath, 'topo/{}_edge.csv'.format(args.dataset)))
+        gt_srls(y_gt, graphs, te_step, args)
     elif args.run_te == 'gt_ls2sr':
         gt_ls2sr(y_gt, graph, te_step, args)
     elif args.run_te == 'p0':

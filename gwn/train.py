@@ -24,9 +24,9 @@ warnings.filterwarnings("ignore", category=UserWarning)
 def get_psi(args, samples=4000, iterator=100):
     X = utils.load_raw(args)
 
-    X = X[:samples, :]
+    X = X[:samples]
 
-    X_temp = np.array([np.max(X[args.seq_len_x + i: \
+    X_temp = np.array([np.max(X[args.seq_len_x + i:
                                 args.seq_len_x + i + args.seq_len_y], axis=0) for i in
                        range(samples - args.seq_len_x - args.seq_len_y)]).T
 
@@ -38,9 +38,8 @@ def get_psi(args, samples=4000, iterator=100):
     return psi
 
 
-def get_phi(args, top_k_index):
-    X = utils.load_raw(args)
-    G = np.zeros((top_k_index.shape[0], X.shape[1]))
+def get_phi(top_k_index, nseries):
+    G = np.zeros((top_k_index.shape[0], nseries))
 
     for i, j in enumerate(G):
         j[top_k_index[i]] = 1
@@ -88,7 +87,8 @@ def main(args, **model_kwargs):
     model.to(device)
     logger = utils.Logger(args)
 
-    engine = utils.Trainer.from_args(model, None, train_loader.dataset.scaler_topk, args)
+    engine = utils.Trainer.from_args(model=model, scaler=None,
+                                     scaler_top_k=train_loader.dataset.scaler_topk, args=args)
 
     utils.print_args(args)
 
@@ -98,9 +98,9 @@ def main(args, **model_kwargs):
         try:
             if os.path.isfile(logger.best_model_save_path):
                 print('Model checkpoint exist!')
-                print('Load model checkpoint? (y/n)')
+                print('Load model checkpoint? (y/Y/Yes/yes/)')
                 _in = input()
-                if _in == 'y' or _in == 'yes':
+                if _in == 'y' or _in == 'yes' or _in == 'Y' or _in == 'Yes':
                     print('Loading model...')
                     engine.model.load_state_dict(torch.load(logger.best_model_save_path))
                 else:
@@ -109,15 +109,12 @@ def main(args, **model_kwargs):
             for epoch in iterator:
                 train_loss, train_rse, train_mae, train_mse, train_mape, train_rmse = [], [], [], [], [], []
                 for iter, batch in enumerate(train_loader):
-
                     # x = batch['x']  # [b, seq_x, n, f]
                     # y = batch['y']  # [b, seq_y, n]
                     # sys.exit()
                     x = batch['x_top_k']
                     y = batch['y_top_k']
 
-                    if y.max() == 0:
-                        continue
                     loss, rse, mae, mse, mape, rmse = engine.train(x, y)
                     train_loss.append(loss)
                     train_rse.append(rse)
@@ -175,7 +172,6 @@ def main(args, **model_kwargs):
             print('|--- Calculating psi, phi')
 
             psi = get_psi(args)
-            phi = get_phi(args, top_k_index)
             obj = {
                 'psi': psi,
             }
@@ -189,7 +185,8 @@ def main(args, **model_kwargs):
                 obj = pickle.load(fp)
                 fp.close()
             psi = obj['psi']
-            phi = get_phi(args, top_k_index)
+
+        phi = get_phi(top_k_index, total_series)
 
         # traffic reconstruction using compressive sensing
         A = np.dot(phi, psi.matrix)
@@ -269,7 +266,7 @@ def main(args, **model_kwargs):
     np.save(os.path.join(logger.log_dir, 'y_real_test_{}'.format(args.testset)), y_real)
 
     if args.run_te != 'None':
-        run_te(x_gt, y_gt, y_cs, args)
+        run_te(x_gt, y_gt, yhat, args)
 
     print(
         '\n{} testset: {} x: {} y: {} topk:{} cs: {}'.format(args.dataset, args.testset, args.seq_len_x, args.seq_len_y,

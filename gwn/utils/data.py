@@ -47,7 +47,7 @@ class StandardScaler_torch:
         if len(data_size) > 2:
             _data = _data.reshape(-1, data_size[-1])
 
-        _data = (_data - self.means) / (self.stds + 1e-8)
+        _data = (_data - self.means) / (self.stds + 1e-12)
 
         if len(data_size) > 2:
             _data = _data.reshape(data.size())
@@ -59,7 +59,7 @@ class StandardScaler_torch:
         if len(data_size) > 2:
             data = data.reshape(-1, data_size[-1])
 
-        data = (data * (self.stds + 1e-8)) + self.means
+        data = (data * (self.stds + 1e-12)) + self.means
 
         if len(data_size) > 2:
             data = data.reshape(data_size)
@@ -129,17 +129,12 @@ class PartialTrafficDataset(Dataset):
         return indices
 
 
-def load_matlab_matrix(path, variable_name):
-    X = loadmat(path)[variable_name]
-    return X
-
-
 def load_raw(args):
-    # load ground truth
+    # load original dataset
     path = args.datapath
 
     data_path = os.path.join(path, 'data/{}.mat'.format(args.dataset))
-    X = load_matlab_matrix(data_path, 'X')
+    X = loadmat(data_path)['X']
     if len(X.shape) > 2:
         X = np.reshape(X, newshape=(X.shape[0], -1))
 
@@ -154,8 +149,8 @@ def np2torch(X, device):
 
 
 def topk_train(Xscaledtopk, Xtopk, X, oX, t, args):
-    x_topk = torch.clone(Xscaledtopk[t:t + args.seq_len_x])
-    x_topk = x_topk.unsqueeze(dim=-1)  # add feature dim [seq_x, n, 1]
+    x_scaled_topk = torch.clone(Xscaledtopk[t:t + args.seq_len_x])
+    x_scaled_topk = x_scaled_topk.unsqueeze(dim=-1)  # add feature dim [seq_x, n, 1]
 
     y_topk = torch.max(Xtopk[t + args.seq_len_x:t + args.seq_len_x + args.seq_len_y], dim=0)[0]
     y_topk = y_topk.reshape(1, -1)
@@ -164,10 +159,10 @@ def topk_train(Xscaledtopk, Xtopk, X, oX, t, args):
     y_real = y_real.reshape(1, -1)
 
     # Data for doing traffic engineering
-    x_gt = torch.clone(oX[t * args.k:(t + args.seq_len_x) * args.k])
-    y_gt = torch.clone(oX[(t + args.seq_len_x) * args.k: (t + args.seq_len_x + args.seq_len_y) * args.k])
+    x_gt = torch.clone(oX[t:t + args.seq_len_x])
+    y_gt = torch.clone(oX[t + args.seq_len_x: t + args.seq_len_x + args.seq_len_y])
 
-    return x_topk, y_topk, y_real, x_gt, y_gt
+    return x_scaled_topk, y_topk, y_real, x_gt, y_gt
 
 
 def data_preprocessing(data, topk_index, args, gen_times=5, scaler_top_k=None):
@@ -177,12 +172,15 @@ def data_preprocessing(data, topk_index, args, gen_times=5, scaler_top_k=None):
     oX = np.copy(data)
     oX = np2torch(oX, args.device)
 
-    # Obtain data with different granularity k
-    X = granularity(data, args.k)
+    # Obtain data with different granularity
+    # X = granularity(data, args.k)
+    # test with k = 1
+    X = np.copy(data)
 
     # Obtain dataset with topk flows
     X_top_k = np.copy(X[:, topk_index])
 
+    # Load data to devices
     X = np2torch(X, args.device)
     X_top_k = np2torch(X_top_k, args.device)
 
@@ -197,26 +195,26 @@ def data_preprocessing(data, topk_index, args, gen_times=5, scaler_top_k=None):
     len_y = args.seq_len_y
 
     dataset = {'Xtopk': [], 'Ytopk': [], 'Xgt': [], 'Ygt': [], 'Yreal': [],
-               'Topkindex': topk_index, 'Scaler_topk': scaler_top_k}
+               'Topkindex': topk_index, 'Scaler_topk': scaler_top_k, 'device': args.device}
 
-    skip = 4
+    skip = 1
     start_idx = 0
     for _ in range(gen_times):
         for t in range(start_idx, n_timesteps - len_x - len_y, len_x):
             if args.fs == 'train':
-                x_topk, y_topk, y_real, x_gt, y_gt = topk_train(Xscaledtopk=X_scaled_top_k,
-                                                                Xtopk=X_top_k,
-                                                                X=X, oX=oX, t=t, args=args)
+                x_scaled_topk, y_topk, y_real, x_gt, y_gt = topk_train(Xscaledtopk=X_scaled_top_k,
+                                                                       Xtopk=X_top_k,
+                                                                       X=X, oX=oX, t=t, args=args)
             else:
                 raise RuntimeError('No flow selection!')
 
-            dataset['Xtopk'].append(x_topk)  # [sample, len_x, k, 1]
+            dataset['Xtopk'].append(x_scaled_topk)  # [sample, len_x, k, 1]
             dataset['Ytopk'].append(y_topk)  # [sample, 1, k]
             dataset['Yreal'].append(y_real)  # [sample, 1, k]
             dataset['Xgt'].append(x_gt)
             dataset['Ygt'].append(y_gt)
 
-        start_idx = start_idx + skip
+        start_idx += skip
 
     dataset['Xtopk'] = torch.stack(dataset['Xtopk'], dim=0)
     dataset['Ytopk'] = torch.stack(dataset['Ytopk'], dim=0)
@@ -286,7 +284,7 @@ def get_dataloader(args):
         # obtain topk largest flows index from training set
         means = np.mean(train, axis=0)
         top_k_index = np.argsort(means)[::-1]
-        top_k_index = top_k_index[:int(args.mon_rate * train.shape[1] / 100)]
+        top_k_index = top_k_index[:int(args.mon_rate * total_series / 100)]
 
         print('Data preprocessing: TRAINSET')
         trainset = data_preprocessing(data=train, topk_index=top_k_index, args=args, gen_times=10, scaler_top_k=None)
@@ -314,31 +312,40 @@ def get_dataloader(args):
             fp.close()
     else:
         print('Load saved dataset from {}'.format(stored_path))
-        with open(saved_train_path, 'rb') as fp:
-            trainset = pickle.load(fp)
-            fp.close()
-        with open(saved_val_path, 'rb') as fp:
-            valset = pickle.load(fp)
-            fp.close()
         with open(saved_test_path, 'rb') as fp:
             testset_list = pickle.load(fp)
             fp.close()
 
-    # Training set
-    train_set = PartialTrafficDataset(trainset, args=args)
-    train_loader = DataLoader(train_set,
-                              batch_size=args.train_batch_size,
-                              shuffle=True)
+        args.device = testset_list[0]['device']
 
-    # validation set
-    val_set = PartialTrafficDataset(valset, args=args)
-    val_loader = DataLoader(val_set,
-                            batch_size=args.val_batch_size,
-                            shuffle=False)
+        if args.test:
+            trainset, valset = None, None
+        else:
+            with open(saved_train_path, 'rb') as fp:
+                trainset = pickle.load(fp)
+                fp.close()
+            with open(saved_val_path, 'rb') as fp:
+                valset = pickle.load(fp)
+                fp.close()
 
     test_set = PartialTrafficDataset(testset_list[args.testset], args=args)
     test_loader = DataLoader(test_set,
                              batch_size=args.test_batch_size,
                              shuffle=False)
+
+    if args.test:  # Only load testing set
+        train_loader = None
+        val_loader = None
+    else:
+        train_set = PartialTrafficDataset(trainset, args=args)
+        train_loader = DataLoader(train_set,
+                                  batch_size=args.train_batch_size,
+                                  shuffle=True)
+
+        # validation set
+        val_set = PartialTrafficDataset(valset, args=args)
+        val_loader = DataLoader(val_set,
+                                batch_size=args.val_batch_size,
+                                shuffle=False)
 
     return train_loader, val_loader, test_loader, total_timesteps, total_series

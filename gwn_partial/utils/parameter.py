@@ -87,7 +87,7 @@ def get_args():
     # parameter for test_routing
     parser.add_argument('--run_te', type=str, choices=['None', 'gwn_ls2sr', 'gt_ls2sr', 'p0', 'p1', 'p2', 'gwn_p2',
                                                        'p3', 'onestep', 'prophet', 'laststep', 'laststep_ls2sr',
-                                                       'firststep', 'or', 'gwn_srls'],
+                                                       'firststep', 'or', 'gwn_srls', 'gt_srls'],
                         default='None')
     # rand: topk random
     # prand: topk + partially random in each routing cycle

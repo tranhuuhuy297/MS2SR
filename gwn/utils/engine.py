@@ -40,7 +40,6 @@ class Trainer():
         # input = torch.nn.functional.pad(input, (1, 0, 0, 0))
 
         output = self.model(x)  # now, output = [bs, seq_y, n]
-        # predict = self.scaler.inverse_transform(output)
         if self.scaler_top_k is not None:
             output = self.scaler_top_k.inverse_transform(output)
 
@@ -63,7 +62,6 @@ class Trainer():
 
         output = self.model(input)  # now, output = [bs, seq_y, n]
 
-        # predict = self.scaler.inverse_transform(output)
         if self.scaler_top_k is not None:
             output = self.scaler_top_k.inverse_transform(output)
 
@@ -103,7 +101,7 @@ class Trainer():
         y_real = torch.cat(y_real, dim=0)
         test_met = []
 
-        yhat[yhat < 0.0] = 0.0
+        # yhat[yhat < 0.0] = 0.0
 
         for i in range(out_seq_len):
             pred = yhat[:, i, :]
