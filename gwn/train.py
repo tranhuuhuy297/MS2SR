@@ -66,7 +66,7 @@ def main(args, **model_kwargs):
         raise ValueError('Dataset not found!')
 
     train_loader, val_loader, test_loader, total_timesteps, total_series = utils.get_dataloader(args)
-    args.nSeries = total_series
+    args.nSeries = int(args.mon_rate * total_series / 100)
 
     in_dim = 1
     if args.tod:
