@@ -258,7 +258,7 @@ def gwn_ls2sr(yhat, y_gt, graph, te_step, args):
 
 
 def createGraph_srls(NodesFile, EdgesFile):
-    def addEdge(graph, src, dst, w, bw, delay, idx):
+    def addEdge(graph, src, dst, w, bw, delay, idx, capacity):
         graph.add_edge(src, dst, weight=w,
                        capacity=bw,
                        delay=delay)
@@ -278,10 +278,11 @@ def createGraph_srls(NodesFile, EdgesFile):
     for _, row in df.iterrows():
         i = row.src
         j = row.dest
-        addEdge(G, i, j, row.weight, row.bw, row.delay, index)
-        index += 1
+        if (i, j) not in G.edges:
+            addEdge(G, i, j, row.weight, row.bw, row.delay, index, capacity)
+            index += 1
         if (j, i) not in G.edges:
-            addEdge(G, j, i, row.weight, row.bw, row.delay, index)
+            addEdge(G, j, i, row.weight, row.bw, row.delay, index, capacity)
             index += 1
 
     nEdges = G.number_of_edges()
