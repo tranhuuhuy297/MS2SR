@@ -29,6 +29,7 @@ def get_args():
     parser.add_argument('--fs', help='Flow selection strategy', type=str, choices=['train'],
                         default='train')
     parser.add_argument('--mon_rate', type=int, default=0, choices=[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
+    parser.add_argument('--cs', type=int, default=-1, choices=[-1, 0, 1])
 
     args = parser.parse_args()
     return args
@@ -44,7 +45,10 @@ def main():
         mon_rate = [args.mon_rate]
 
     if args.test:
-        CS = [0, 1]
+        if args.cs == -1:
+            CS = [0, 1]
+        else:
+            CS = [args.cs]
         if args.dataset == 'abilene_tm':
             testset = [0, 1, 2, 3, 4, 5]
         else:
