@@ -14,7 +14,7 @@ def get_args():
                                  'brain10_tm', 'abilene10_tm'],
                         help='Dataset, (default abilene_tm)')
     parser.add_argument('--testset', type=int, default=0,
-                        choices=[0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+                        choices=[0, 1, 2, 3, 4],
                         help='Test set, (default 0)')
 
     parser.add_argument('--mon_rate', type=int, default=10)

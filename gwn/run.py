@@ -30,6 +30,9 @@ def get_args():
                         default='train')
     parser.add_argument('--mon_rate', type=int, default=0, choices=[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
     parser.add_argument('--cs', type=int, default=-1, choices=[-1, 0, 1])
+    parser.add_argument('--testset', type=int, default=-1,
+                        choices=[-1, 0, 1, 2, 3, 4],
+                        help='Test set, (default 0)')
 
     args = parser.parse_args()
     return args
@@ -49,10 +52,11 @@ def main():
             CS = [0, 1]
         else:
             CS = [args.cs]
-        if args.dataset == 'abilene_tm':
-            testset = [0, 1, 2, 3, 4, 5]
-        else:
+
+        if args.testset == -1:
             testset = [0, 1, 2, 3, 4]
+        else:
+            testset = [args.testset]
     else:
         CS = [1]
         testset = [0]
