@@ -64,6 +64,15 @@ def main(args, **model_kwargs):
     elif 'sinet' in args.dataset:
         args.nNodes = 74
         args.day_size = 288
+    elif 'renater' in args.dataset:
+        args.nNodes = 30
+        args.day_size = 288
+    elif 'surfnet' in args.dataset:
+        args.nNodes = 50
+        args.day_size = 288
+    elif 'uninett' in args.dataset:
+        args.nNodes = 74
+        args.day_size = 288
     else:
         raise ValueError('Dataset not found!')
 
