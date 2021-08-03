@@ -318,7 +318,7 @@ def gwn_srls(yhat, y_gt, graphs, te_step, args):
 
     results = []
     solver = SRLS(sp, capacity, nNodes, nEdges, args.timeout)
-
+    LinkLoads, RoutingMatrices, TMs = [], [], []
     dynamicity = np.zeros(shape=(te_step, 7))
     for i in tqdm(range(te_step)):
         mean = np.mean(y_gt[i], axis=1)
@@ -331,12 +331,19 @@ def gwn_srls(yhat, y_gt, graphs, te_step, args):
         theo_lamda = calculate_lamda(y_gt=y_gt[i])
 
         pred_tm = yhat[i]
-        u, solution = p2_srls_solver(solver, tm=pred_tm, gt_tms=y_gt[i], nNodes=args.nNodes)
-        solution = np.asarray(solution)
+        u, solutions, linkloads, routingMxs = p2_srls_solver(solver, tm=pred_tm, gt_tms=y_gt[i], nNodes=args.nNodes)
+        solutions = np.asarray(solutions)
         dynamicity[i] = [np.sum(y_gt[i]), std_mean, std_std, np.sum(std), maxmax_mean, np.mean(u), theo_lamda]
 
-        _solution = np.copy(solution)
-        results.append((u, _solution))
+        _solutions = np.copy(solutions)
+        results.append((u, _solutions))
+        LinkLoads.append(linkloads)
+        RoutingMatrices.append(routingMxs)
+        TMs.append(y_gt[i])
+
+    LinkLoads = np.stack(LinkLoads, axis=0)
+    RoutingMatrices = np.stack(RoutingMatrices, axis=0)
+    TMs = np.stack(TMs, axis=0)
 
     mlu, solution = extract_results(results)
     route_changes = get_route_changes(solution, G)
@@ -355,6 +362,11 @@ def gwn_srls(yhat, y_gt, graphs, te_step, args):
     save_results(args.log_dir, 'test_{}_gwn_srls_cs_{}'.format(args.testset, args.cs), mlu, route_changes)
     np.save(os.path.join(args.log_dir, 'test_{}_gwn_srls_dyn_cs_{}'.format(args.testset, args.cs)), dynamicity)
 
+    np.save(os.path.join(args.log_dir, 'LinkLoads_gwn_srls_{}_cs_{}'.format(args.testset, args.cs)), LinkLoads)
+    np.save(os.path.join(args.log_dir, 'RoutingMatrices_gwn_srls_{}_cs_{}'.format(args.testset, args.cs)),
+            RoutingMatrices)
+    np.save(os.path.join(args.log_dir, 'TMs_gwn_srls_{}_cs_{}'.format(args.testset, args.cs)), TMs)
+
 
 def gt_srls(y_gt, graphs, te_step, args):
     print('gt_srls')
@@ -362,7 +374,7 @@ def gt_srls(y_gt, graphs, te_step, args):
 
     results = []
     solver = SRLS(sp, capacity, nNodes, nEdges, args.timeout)
-
+    LinkLoads, RoutingMatrices, TMs = [], [], []
     dynamicity = np.zeros(shape=(te_step, 7))
     for i in tqdm(range(te_step)):
         mean = np.mean(y_gt[i], axis=1)
@@ -375,15 +387,21 @@ def gt_srls(y_gt, graphs, te_step, args):
         theo_lamda = calculate_lamda(y_gt=y_gt[i])
 
         pred_tm = np.max(y_gt[i], axis=0, keepdims=True)
-        u, solution = p2_srls_solver(solver, tm=pred_tm, gt_tms=y_gt[i], nNodes=args.nNodes)
-        solution = np.asarray(solution)
+        u, solutions, linkloads, routingMxs = p2_srls_solver(solver, tm=pred_tm, gt_tms=y_gt[i], nNodes=args.nNodes)
+        solutions = np.asarray(solutions)
         dynamicity[i] = [np.sum(y_gt[i]), std_mean, std_std, np.sum(std), maxmax_mean, np.mean(u), theo_lamda]
 
-        _solution = np.copy(solution)
-        results.append((u, _solution))
+        _solutions = np.copy(solutions)
+        results.append((u, _solutions))
+        LinkLoads.append(linkloads)
+        RoutingMatrices.append(routingMxs)
+        TMs.append(y_gt[i])
 
     mlu, solution = extract_results(results)
     route_changes = get_route_changes(solution, G)
+    LinkLoads = np.stack(LinkLoads, axis=0)
+    RoutingMatrices = np.stack(RoutingMatrices, axis=0)
+    TMs = np.stack(TMs, axis=0)
 
     print('Route changes: Avg {:.3f} std {:.3f}'.format(np.sum(route_changes) /
                                                         (args.seq_len_y * route_changes.shape[0]),
@@ -399,9 +417,69 @@ def gt_srls(y_gt, graphs, te_step, args):
     save_results(args.log_dir, 'test_{}_gt_srls_cs_{}'.format(args.testset, args.cs), mlu, route_changes)
     np.save(os.path.join(args.log_dir, 'test_{}_gt_srls_dyn_cs_{}'.format(args.testset, args.cs)), dynamicity)
 
+    np.save(os.path.join(args.log_dir, 'LinkLoads_gwn_srls_{}_cs_{}'.format(args.testset, args.cs)), LinkLoads)
+    np.save(os.path.join(args.log_dir, 'RoutingMatrices_gwn_srls_{}_cs_{}'.format(args.testset, args.cs)),
+            RoutingMatrices)
+    np.save(os.path.join(args.log_dir, 'TMs_gwn_srls_{}_cs_{}'.format(args.testset, args.cs)), TMs)
+
+
+def srls_p0(y_gt, graphs, te_step, args):
+    print('srls_p0')
+    G, nNodes, nEdges, capacity, sp = graphs
+
+    results = []
+    solver = SRLS(sp, capacity, nNodes, nEdges, args.timeout)
+    LinkLoads, RoutingMatrices, TMs = [], [], []
+    dynamicity = np.zeros(shape=(te_step, 7))
+    for i in tqdm(range(te_step)):
+        mean = np.mean(y_gt[i], axis=1)
+        std_mean = np.std(mean)
+        std = np.std(y_gt[i], axis=1)
+        std_std = np.std(std)
+
+        maxmax_mean = np.max(y_gt[i]) / np.mean(y_gt[i])
+
+        theo_lamda = calculate_lamda(y_gt=y_gt[i])
+
+        u, solutions, linkloads, routingMxs = p0_srls_solver(solver, tms=y_gt[i], gt_tms=y_gt[i], nNodes=args.nNodes)
+        solutions = np.asarray(solutions)
+        dynamicity[i] = [np.sum(y_gt[i]), std_mean, std_std, np.sum(std), maxmax_mean, np.mean(u), theo_lamda]
+
+        _solutions = np.copy(solutions)
+        results.append((u, _solutions))
+        LinkLoads.append(linkloads)
+        RoutingMatrices.append(routingMxs)
+        TMs.append(y_gt[i])
+
+    LinkLoads = np.stack(LinkLoads, axis=0)
+    RoutingMatrices = np.stack(RoutingMatrices, axis=0)
+    TMs = np.stack(TMs, axis=0)
+
+    mlu, solution = extract_results(results)
+    route_changes = get_route_changes(solution, G)
+
+    print('Route changes: Avg {:.3f} std {:.3f}'.format(np.sum(route_changes) /
+                                                        (args.seq_len_y * route_changes.shape[0]),
+                                                        np.std(route_changes)))
+    print('srls_p0     {}      | {:.3f}   {:.3f}   {:.3f}   {:.3f}'.format(args.model,
+                                                                           np.min(mlu),
+                                                                           np.mean(mlu),
+                                                                           np.max(mlu),
+                                                                           np.std(mlu)))
+    congested = mlu[mlu >= 1.0].size
+    print('Congestion_rate: {}/{}'.format(congested, mlu.size))
+
+    save_results(args.log_dir, 'test_{}_srls_p0'.format(args.testset), mlu, route_changes)
+    np.save(os.path.join(args.log_dir, 'test_{}_srls_p0_dyn'.format(args.testset)), dynamicity)
+
+    np.save(os.path.join(args.log_dir, 'LinkLoads_gwn_srls_{}_cs_{}'.format(args.testset, args.cs)), LinkLoads)
+    np.save(os.path.join(args.log_dir, 'RoutingMatrices_gwn_srls_{}_cs_{}'.format(args.testset, args.cs)),
+            RoutingMatrices)
+    np.save(os.path.join(args.log_dir, 'TMs_gwn_srls_{}_cs_{}'.format(args.testset, args.cs)), TMs)
+
 
 def gt_ls2sr(y_gt, graph, te_step, args):
-    print('ls2sr p2')
+    print('gt_ls2sr')
 
     results = []
     solver = LS2SRSolver(graph=graph, args=args)
@@ -788,10 +866,54 @@ def p2_srls_solver(solver, tm, gt_tms, nNodes):
         pass
 
     solution = solver.extractRoutingPath()
+    linkloads, routingMxs = [], []
+    solutions = []
 
     for i in range(gt_tms.shape[0]):
+        solutions.append(solution)
+
         u.append(solver.evaluate(solution, gt_tms[i]))
-    return u, solution
+
+        linkload = solver.getLinkload(routingSolution=solution, trafficMatrix=gt_tms[i])
+        routingMx = solver.getRoutingMatrix(routingSolution=solution)
+        linkloads.append(linkload)
+        routingMxs.append(routingMx)
+
+    return u, solutions, linkloads, routingMxs
+
+
+def p0_srls_solver(solver, tms, gt_tms, nNodes):
+    u = []
+    tms = tms.reshape((-1, nNodes, nNodes))
+    gt_tms = gt_tms.reshape((-1, nNodes, nNodes))
+
+    tms[tms <= 0.0] = 0.0
+    gt_tms[gt_tms <= 0.0] = 0.0
+
+    tms[:] = tms[:] * (1.0 - np.eye(nNodes))
+    gt_tms[:] = gt_tms[:] * (1.0 - np.eye(nNodes))
+    tms = tms.reshape((-1, nNodes, nNodes))
+
+    solutions = []
+    linkloads, routingMxs = [], []
+    for i in range(gt_tms.shape[0]):
+        try:
+            solver.modifierTrafficMatrix(tms[i])  # solve backtrack solution (line 131)
+            solver.solve()
+        except:
+            print('ERROR in p2_srls_solver --> pass')
+            pass
+        solution = solver.extractRoutingPath()
+
+        u.append(solver.evaluate(solution, gt_tms[i]))
+        solutions.append(solution)
+
+        linkload = solver.getLinkload(routingSolution=solution, trafficMatrix=gt_tms[i])
+        routingMx = solver.getRoutingMatrix(routingSolution=solution)
+        linkloads.append(linkload)
+        routingMxs.append(routingMx)
+
+    return u, solutions, linkloads, routingMxs
 
 
 def last_step_sr(solver, last_tm, gt_tms):
@@ -870,6 +992,10 @@ def run_te(x_gt, y_gt, yhat, args):
         graphs = createGraph_srls(os.path.join(args.datapath, 'topo/{}_node.csv'.format(args.dataset)),
                                   os.path.join(args.datapath, 'topo/{}_edge.csv'.format(args.dataset)))
         gt_srls(y_gt, graphs, te_step, args)
+    elif args.run_te == 'srls_p0':
+        graphs = createGraph_srls(os.path.join(args.datapath, 'topo/{}_node.csv'.format(args.dataset)),
+                                  os.path.join(args.datapath, 'topo/{}_edge.csv'.format(args.dataset)))
+        srls_p0(y_gt, graphs, te_step, args)
     elif args.run_te == 'gt_ls2sr':
         gt_ls2sr(y_gt, graph, te_step, args)
     elif args.run_te == 'p0':
