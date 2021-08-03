@@ -76,7 +76,7 @@ def main(args, **model_kwargs):
     else:
         raise ValueError('Dataset not found!')
 
-    sets = ['val']
+    sets = ['val', 'test_0', 'test_1', 'test_2', 'test_3', 'test_4']
     for cs in [0, 1]:
         args.cs = cs
         for set in sets:
