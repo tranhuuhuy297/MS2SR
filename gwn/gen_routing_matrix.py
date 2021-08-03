@@ -76,130 +76,134 @@ def main(args, **model_kwargs):
     else:
         raise ValueError('Dataset not found!')
 
-    sets = ['test_0']
-    for set in sets:
-        if set == 'train' or set == 'val':
-            args.test = False
-            args.testset = 0
-        else:
-            args.test = True
-            testset = int(set.split('_')[1])
-            args.testset = testset
-
-        train_loader, val_loader, test_loader, total_timesteps, total_series = utils.get_dataloader(args)
-        args.nSeries = int(args.mon_rate * total_series / 100)
-
-        in_dim = 1
-        if args.tod:
-            in_dim += 1
-        if args.ma:
-            in_dim += 1
-        if args.mx:
-            in_dim += 1
-
-        args.in_dim = in_dim
-
-        aptinit, supports = utils.make_graph_inputs(args, device)
-
-        model = models.GWNet.from_args(args, supports, aptinit, **model_kwargs)
-        model.to(device)
-        logger = utils.Logger(args)
-
-        engine = utils.Trainer.from_args(model=model, scaler=None,
-                                         scaler_top_k=test_loader.dataset.scaler_topk, args=args)
-
-        utils.print_args(args)
-        if set == 'train':
-            data_loader = train_loader
-        elif set == 'val':
-            data_loader = val_loader
-        else:
-            data_loader = test_loader
-
-        # Metrics on test data
-        engine.model.load_state_dict(torch.load(logger.best_model_save_path))
-        with torch.no_grad():
-            test_met_df, x_gt, y_gt, yhat, y_real = engine.test(data_loader, engine.model, args.out_seq_len)
-
-        x_gt = x_gt.cpu().data.numpy()  # [timestep, seq_x, seq_y]
-        y_gt = y_gt.cpu().data.numpy()
-        yhat = yhat.cpu().data.numpy()
-        top_k_index = test_loader.dataset.Topkindex
-        ygt_shape = y_gt.shape
-        if args.cs:
-            print('|--- Traffic reconstruction using CS')
-            y_cs = np.zeros(shape=(ygt_shape[0], 1, ygt_shape[-1]))
-
-            # obtain psi, G, R
-            psi_save_path = os.path.join(args.datapath, 'cs/saved_psi/')
-            if not os.path.exists(psi_save_path):
-                os.makedirs(psi_save_path)
-            psi_save_path = os.path.join(psi_save_path, '{}_{}_{}_{}_psi.pkl'.format(args.dataset,
-                                                                                     args.mon_rate,
-                                                                                     args.seq_len_x,
-                                                                                     args.seq_len_y))
-            if not os.path.isfile(psi_save_path):
-                print('|--- Calculating psi, phi')
-
-                psi = get_psi(args)
-                obj = {
-                    'psi': psi,
-                }
-                with open(psi_save_path, 'wb') as fp:
-                    pickle.dump(obj, fp, protocol=pickle.HIGHEST_PROTOCOL)
-                    fp.close()
+    sets = ['train']
+    for cs in [0, 1]:
+        args.cs = cs
+        for set in sets:
+            if set == 'train' or set == 'val':
+                args.test = False
+                args.testset = 0
             else:
-                print('|--- Loading psi, phi from {}'.format(psi_save_path))
+                args.test = True
+                testset = int(set.split('_')[1])
+                args.testset = testset
 
-                with open(psi_save_path, 'rb') as fp:
-                    obj = pickle.load(fp)
-                    fp.close()
-                psi = obj['psi']
+            train_loader, val_loader, test_loader, total_timesteps, total_series = utils.get_dataloader(args)
+            args.nSeries = int(args.mon_rate * total_series / 100)
 
-            phi = get_phi(top_k_index, total_series)
+            in_dim = 1
+            if args.tod:
+                in_dim += 1
+            if args.ma:
+                in_dim += 1
+            if args.mx:
+                in_dim += 1
 
-            # traffic reconstruction using compressive sensing
-            A = np.dot(phi, psi.matrix)
-            for i in range(y_cs.shape[0]):
-                sparse = Solver_l0(A, max_iter=100, sparsity=int(args.mon_rate / 100 * y_cs.shape[-1])).fit(yhat[i].T)
-                y_cs[i] = np.dot(psi.matrix, sparse).T
+            args.in_dim = in_dim
 
-        else:
-            print('|--- No traffic reconstruction')
-            y_cs = np.ones(shape=(ygt_shape[0], 1, ygt_shape[-1]))
-            # y_cs[:] = np.mean(yhat)
-            y_cs[:, :, top_k_index] = yhat
+            aptinit, supports = utils.make_graph_inputs(args, device)
 
-        x_gt = torch.from_numpy(x_gt).to(args.device)
-        y_gt = torch.from_numpy(y_gt).to(args.device)
-        y_cs = torch.from_numpy(y_cs).to(args.device)
-        y_cs[y_cs < 0.0] = 0.0
+            model = models.GWNet.from_args(args, supports, aptinit, **model_kwargs)
+            model.to(device)
+            logger = utils.Logger(args)
 
-        # run traffic engineering
-        x_gt = x_gt.cpu().data.numpy()  # [timestep, seq_x, seq_y]
-        y_gt = y_gt.cpu().data.numpy()
-        y_cs = y_cs.cpu().data.numpy()
-        y_real = y_real.cpu().data.numpy()
+            engine = utils.Trainer.from_args(model=model, scaler=None,
+                                             scaler_top_k=test_loader.dataset.scaler_topk, args=args)
 
-        np.save(os.path.join(logger.log_dir, 'x_gt_test_{}'.format(args.testset)), x_gt)
-        np.save(os.path.join(logger.log_dir, 'y_gt_test_{}'.format(args.testset)), y_gt)
-        np.save(os.path.join(logger.log_dir, 'y_cs_test_{}'.format(args.testset)), y_cs)
-        np.save(os.path.join(logger.log_dir, 'y_real_test_{}'.format(args.testset)), y_real)
+            utils.print_args(args)
+            if set == 'train':
+                data_loader = train_loader
+            elif set == 'val':
+                data_loader = val_loader
+            else:
+                data_loader = test_loader
 
-        if args.run_te != 'None':
-            if args.verbose:
-                print('x_gt ', x_gt.shape)
-                print('y_gt ', y_gt.shape)
-                print('y_cs ', y_cs.shape)
+            # Metrics on test data
+            engine.model.load_state_dict(torch.load(logger.best_model_save_path))
+            with torch.no_grad():
+                test_met_df, x_gt, y_gt, yhat, y_real = engine.test(data_loader, engine.model, args.out_seq_len)
 
-            args.testset = set
-            run_te(x_gt, y_gt, y_cs, args)
+            x_gt = x_gt.cpu().data.numpy()  # [timestep, seq_x, seq_y]
+            y_gt = y_gt.cpu().data.numpy()
+            yhat = yhat.cpu().data.numpy()
+            top_k_index = test_loader.dataset.Topkindex
+            ygt_shape = y_gt.shape
+            if args.cs:
+                print('|--- Traffic reconstruction using CS')
+                y_cs = np.zeros(shape=(ygt_shape[0], 1, ygt_shape[-1]))
 
-        print(
-            '\n{} testset: {} x: {} y: {} topk:{} cs: {}'.format(args.dataset, args.testset, args.seq_len_x,
-                                                                 args.seq_len_y,
-                                                                 args.mon_rate, args.cs))
-        print('\n            ----------------------------\n')
+                # obtain psi, G, R
+                psi_save_path = os.path.join(args.datapath, 'cs/saved_psi/')
+                if not os.path.exists(psi_save_path):
+                    os.makedirs(psi_save_path)
+                psi_save_path = os.path.join(psi_save_path, '{}_{}_{}_{}_psi.pkl'.format(args.dataset,
+                                                                                         args.mon_rate,
+                                                                                         args.seq_len_x,
+                                                                                         args.seq_len_y))
+                if not os.path.isfile(psi_save_path):
+                    print('|--- Calculating psi, phi')
+
+                    psi = get_psi(args)
+                    obj = {
+                        'psi': psi,
+                    }
+                    with open(psi_save_path, 'wb') as fp:
+                        pickle.dump(obj, fp, protocol=pickle.HIGHEST_PROTOCOL)
+                        fp.close()
+                else:
+                    print('|--- Loading psi, phi from {}'.format(psi_save_path))
+
+                    with open(psi_save_path, 'rb') as fp:
+                        obj = pickle.load(fp)
+                        fp.close()
+                    psi = obj['psi']
+
+                phi = get_phi(top_k_index, total_series)
+
+                # traffic reconstruction using compressive sensing
+                A = np.dot(phi, psi.matrix)
+                for i in range(y_cs.shape[0]):
+                    sparse = Solver_l0(A, max_iter=100, sparsity=int(args.mon_rate / 100 * y_cs.shape[-1])).fit(
+                        yhat[i].T)
+                    y_cs[i] = np.dot(psi.matrix, sparse).T
+
+            else:
+                print('|--- No traffic reconstruction')
+                y_cs = np.ones(shape=(ygt_shape[0], 1, ygt_shape[-1]))
+                # y_cs[:] = np.mean(yhat)
+                y_cs[:, :, top_k_index] = yhat
+
+            x_gt = torch.from_numpy(x_gt).to(args.device)
+            y_gt = torch.from_numpy(y_gt).to(args.device)
+            y_cs = torch.from_numpy(y_cs).to(args.device)
+            y_cs[y_cs < 0.0] = 0.0
+
+            # run traffic engineering
+            x_gt = x_gt.cpu().data.numpy()  # [timestep, seq_x, seq_y]
+            y_gt = y_gt.cpu().data.numpy()
+            y_cs = y_cs.cpu().data.numpy()
+            y_real = y_real.cpu().data.numpy()
+
+            np.save(os.path.join(logger.log_dir, 'x_gt_test_{}'.format(args.testset)), x_gt)
+            np.save(os.path.join(logger.log_dir, 'y_gt_test_{}'.format(args.testset)), y_gt)
+            np.save(os.path.join(logger.log_dir, 'y_cs_test_{}'.format(args.testset)), y_cs)
+            np.save(os.path.join(logger.log_dir, 'y_real_test_{}'.format(args.testset)), y_real)
+
+            if args.run_te != 'None':
+                if args.verbose:
+                    print('x_gt ', x_gt.shape)
+                    print('y_gt ', y_gt.shape)
+                    print('y_cs ', y_cs.shape)
+                print(' SET: {}'.format(set))
+
+                args.testset = set
+                run_te(x_gt, y_gt, y_cs, args)
+
+            print(
+                '\n{} testset: {} x: {} y: {} topk:{} cs: {}'.format(args.dataset, args.testset, args.seq_len_x,
+                                                                     args.seq_len_y,
+                                                                     args.mon_rate, args.cs))
+            print('\n            ----------------------------\n')
 
 
 if __name__ == "__main__":
