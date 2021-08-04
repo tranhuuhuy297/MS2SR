@@ -100,57 +100,6 @@ def main(args, **model_kwargs):
 
     utils.print_args(args)
 
-    if not args.test:
-        iterator = trange(args.epochs)
-
-        try:
-            if os.path.isfile(logger.best_model_save_path):
-                print('Model checkpoint exist!')
-                print('Load model checkpoint? (y/Y/Yes/yes/)')
-                _in = input()
-                if _in == 'y' or _in == 'yes' or _in == 'Y' or _in == 'Yes':
-                    print('Loading model...')
-                    engine.model.load_state_dict(torch.load(logger.best_model_save_path))
-                else:
-                    print('Training new model')
-
-            for epoch in iterator:
-                train_loss, train_rse, train_mae, train_mse, train_mape, train_rmse = [], [], [], [], [], []
-                for iter, batch in enumerate(train_loader):
-                    # x = batch['x']  # [b, seq_x, n, f]
-                    # y = batch['y']  # [b, seq_y, n]
-                    # sys.exit()
-                    x = batch['x_top_k']
-                    y = batch['y_top_k']
-
-                    loss, rse, mae, mse, mape, rmse = engine.train(x, y)
-                    train_loss.append(loss)
-                    train_rse.append(rse)
-                    train_mae.append(mae)
-                    train_mse.append(mse)
-                    train_mape.append(mape)
-                    train_rmse.append(rmse)
-
-                engine.scheduler.step()
-                with torch.no_grad():
-                    val_loss, val_rse, val_mae, val_mse, val_mape, val_rmse = engine.eval(val_loader)
-                m = dict(train_loss=np.mean(train_loss), train_rse=np.mean(train_rse),
-                         train_mae=np.mean(train_mae), train_mse=np.mean(train_mse),
-                         train_mape=np.mean(train_mape), train_rmse=np.mean(train_rmse),
-                         val_loss=np.mean(val_loss), val_rse=np.mean(val_rse),
-                         val_mae=np.mean(val_mae), val_mse=np.mean(val_mse),
-                         val_mape=np.mean(val_mape), val_rmse=np.mean(val_rmse))
-
-                description = logger.summary(m, engine.model)
-
-                if logger.stop:
-                    break
-
-                description = 'Epoch: {} '.format(epoch) + description
-                iterator.set_description(description)
-        except KeyboardInterrupt:
-            pass
-
     # Metrics on test data
     engine.model.load_state_dict(torch.load(logger.best_model_save_path))
     with torch.no_grad():
@@ -273,7 +222,6 @@ def main(args, **model_kwargs):
     np.save(os.path.join(logger.log_dir, 'y_gt_test_{}'.format(args.testset)), y_gt)
     np.save(os.path.join(logger.log_dir, 'y_cs_test_{}'.format(args.testset)), y_cs)
     np.save(os.path.join(logger.log_dir, 'y_real_test_{}'.format(args.testset)), y_real)
-    np.save(os.path.join(logger.log_dir, 'yhat_test_{}'.format(args.testset)), yhat)
 
     if args.run_te != 'None':
         if args.verbose:

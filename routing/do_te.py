@@ -860,9 +860,11 @@ def p2_srls_solver(solver, tm, gt_tms, nNodes):
 
     try:
         solver.modifierTrafficMatrix(tm)  # solve backtrack solution (line 131)
-        solver.solve()
+        flows, links = solver.solve()
     except:
         print('ERROR in p2_srls_solver --> pass')
+        links = np.zeros((solver.nEdges, 1))
+        flows = np.zeros((solver.nNodes, solver.nNodes))
         pass
 
     solution = solver.extractRoutingPath()
@@ -896,12 +898,15 @@ def p0_srls_solver(solver, tms, gt_tms, nNodes):
 
     solutions = []
     linkloads, routingMxs = [], []
+
     for i in range(gt_tms.shape[0]):
         try:
             solver.modifierTrafficMatrix(tms[i])  # solve backtrack solution (line 131)
-            solver.solve()
+            flows, links = solver.solve()
         except:
             print('ERROR in p2_srls_solver --> pass')
+            links = np.zeros((solver.nEdges, 1))
+            flows = np.zeros((solver.nNodes, solver.nNodes))
             pass
         solution = solver.extractRoutingPath()
 

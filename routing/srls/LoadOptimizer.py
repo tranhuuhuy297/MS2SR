@@ -50,7 +50,7 @@ class LoadOptimizer:
 
     def selectDemand(self):
         edge = self.maxLoad.selectRandomMaxEdge()
-        return self.edgeDemandState.selectRandomDemand(edge)
+        return self.edgeDemandState.selectRandomDemand(edge), edge
 
     def visitNeighborhood(self, neighborhood, setter):
         nBestMoves = 0
@@ -87,6 +87,10 @@ class LoadOptimizer:
             self.pathState.commit()
 
     def startMoving(self):
+
+        selectedLinks = np.zeros((self.nEdges, 1))
+        selectedFlows = np.zeros((self.nNodes, self.nNodes))
+
         startTime = time.time()
         bestLoad = self.maxLoad.score()
         nIterations = 0
@@ -100,7 +104,7 @@ class LoadOptimizer:
                 self.pathState.commit()
                 bestIteration = nIterations - 1
 
-            demand = self.selectDemand()
+            demand, edge = self.selectDemand()
 
             if (self.maxLoad.score == bestLoad) & (nIterations > (bestIteration + 3)):
                 bestIteration = nIterations
@@ -121,20 +125,25 @@ class LoadOptimizer:
                     self.pathState.commit()
 
                     if self.maxLoad.score() < bestLoad:
+                        selectedLinks[edge] += 1
+                        selectedFlows[self.decisionDemands.demandSrcs[demand]][
+                            self.decisionDemands.demandDests[demand]] += 1
                         self.bestPaths.savePath()
                         bestLoad = self.maxLoad.score()
                         bestIteration = nIterations
 
                 pNeighborhood += 1
 
+        return selectedFlows, selectedLinks
+
     def solve(self):
 
-        self.startMoving()
+        flows, links = self.startMoving()
 
         self.bestPaths.restorePath()
         self.pathState.update()
         self.pathState.commit()
-        return self.pathState
+        return flows, links
 
     def modifierDemands(self, newDemand):
         diffs = []
