@@ -316,56 +316,60 @@ def gwn_srls(yhat, y_gt, graphs, te_step, args):
     print('GWN SRLS')
     G, nNodes, nEdges, capacity, sp = graphs
 
-    results = []
-    solver = SRLS(sp, capacity, nNodes, nEdges, args.timeout)
-    LinkLoads, RoutingMatrices, TMs = [], [], []
-    dynamicity = np.zeros(shape=(te_step, 7))
-    for i in tqdm(range(te_step)):
-        mean = np.mean(y_gt[i], axis=1)
-        std_mean = np.std(mean)
-        std = np.std(y_gt[i], axis=1)
-        std_std = np.std(std)
+    for run_test in range(30):
 
-        maxmax_mean = np.max(y_gt[i]) / np.mean(y_gt[i])
+        results = []
+        solver = SRLS(sp, capacity, nNodes, nEdges, args.timeout)
+        LinkLoads, RoutingMatrices, TMs = [], [], []
+        dynamicity = np.zeros(shape=(te_step, 7))
+        for i in tqdm(range(te_step)):
+            mean = np.mean(y_gt[i], axis=1)
+            std_mean = np.std(mean)
+            std = np.std(y_gt[i], axis=1)
+            std_std = np.std(std)
 
-        theo_lamda = calculate_lamda(y_gt=y_gt[i])
+            maxmax_mean = np.max(y_gt[i]) / np.mean(y_gt[i])
 
-        pred_tm = yhat[i]
-        u, solutions, linkloads, routingMxs = p2_srls_solver(solver, tm=pred_tm, gt_tms=y_gt[i], nNodes=args.nNodes)
-        solutions = np.asarray(solutions)
-        dynamicity[i] = [np.sum(y_gt[i]), std_mean, std_std, np.sum(std), maxmax_mean, np.mean(u), theo_lamda]
+            theo_lamda = calculate_lamda(y_gt=y_gt[i])
 
-        _solutions = np.copy(solutions)
-        results.append((u, _solutions))
-        LinkLoads.append(linkloads)
-        RoutingMatrices.append(routingMxs)
-        TMs.append(y_gt[i])
+            pred_tm = yhat[i]
+            u, solutions, linkloads, routingMxs = p2_srls_solver(solver, tm=pred_tm, gt_tms=y_gt[i], nNodes=args.nNodes)
+            solutions = np.asarray(solutions)
+            dynamicity[i] = [np.sum(y_gt[i]), std_mean, std_std, np.sum(std), maxmax_mean, np.mean(u), theo_lamda]
 
-    LinkLoads = np.stack(LinkLoads, axis=0)
-    RoutingMatrices = np.stack(RoutingMatrices, axis=0)
-    TMs = np.stack(TMs, axis=0)
+            _solutions = np.copy(solutions)
+            results.append((u, _solutions))
 
-    mlu, solution = extract_results(results)
-    route_changes = get_route_changes(solution, G)
+            # LinkLoads.append(linkloads)
+            # RoutingMatrices.append(routingMxs)
+            # TMs.append(y_gt[i])
 
-    print('Route changes: Avg {:.3f} std {:.3f}'.format(np.sum(route_changes) /
-                                                        (args.seq_len_y * route_changes.shape[0]),
-                                                        np.std(route_changes)))
-    print('gwn SRLS    {}      | {:.3f}   {:.3f}   {:.3f}   {:.3f}'.format(args.model,
-                                                                           np.min(mlu),
-                                                                           np.mean(mlu),
-                                                                           np.max(mlu),
-                                                                           np.std(mlu)))
-    congested = mlu[mlu >= 1.0].size
-    print('Congestion_rate: {}/{}'.format(congested, mlu.size))
+        # LinkLoads = np.stack(LinkLoads, axis=0)
+        # RoutingMatrices = np.stack(RoutingMatrices, axis=0)
+        # TMs = np.stack(TMs, axis=0)
 
-    save_results(args.log_dir, 'test_{}_gwn_srls_cs_{}'.format(args.testset, args.cs), mlu, route_changes)
-    np.save(os.path.join(args.log_dir, 'test_{}_gwn_srls_dyn_cs_{}'.format(args.testset, args.cs)), dynamicity)
+        mlu, solution = extract_results(results)
+        route_changes = get_route_changes(solution, G)
 
-    # np.save(os.path.join(args.log_dir, 'LinkLoads_gwn_srls_{}_cs_{}'.format(args.testset, args.cs)), LinkLoads)
-    # np.save(os.path.join(args.log_dir, 'RoutingMatrices_gwn_srls_{}_cs_{}'.format(args.testset, args.cs)),
-    #         RoutingMatrices)
-    # np.save(os.path.join(args.log_dir, 'TMs_gwn_srls_{}_cs_{}'.format(args.testset, args.cs)), TMs)
+        print('Route changes: Avg {:.3f} std {:.3f}'.format(np.sum(route_changes) /
+                                                            (args.seq_len_y * route_changes.shape[0]),
+                                                            np.std(route_changes)))
+        print('gwn SRLS    {}      | {:.3f}   {:.3f}   {:.3f}   {:.3f}'.format(args.model,
+                                                                               np.min(mlu),
+                                                                               np.mean(mlu),
+                                                                               np.max(mlu),
+                                                                               np.std(mlu)))
+        congested = mlu[mlu >= 1.0].size
+        print('Congestion_rate: {}/{}'.format(congested, mlu.size))
+
+        save_results(args.log_dir, 'test_{}_gwn_srls_cs_{}_run_{}'.format(args.testset, args.cs, run_test),
+                     mlu, route_changes)
+        # np.save(os.path.join(args.log_dir, 'test_{}_gwn_srls_dyn_cs_{}'.format(args.testset, args.cs)), dynamicity)
+
+        # np.save(os.path.join(args.log_dir, 'LinkLoads_gwn_srls_{}_cs_{}'.format(args.testset, args.cs)), LinkLoads)
+        # np.save(os.path.join(args.log_dir, 'RoutingMatrices_gwn_srls_{}_cs_{}'.format(args.testset, args.cs)),
+        #         RoutingMatrices)
+        # np.save(os.path.join(args.log_dir, 'TMs_gwn_srls_{}_cs_{}'.format(args.testset, args.cs)), TMs)
 
 
 def gt_srls(y_gt, graphs, te_step, args):
