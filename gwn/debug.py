@@ -135,7 +135,7 @@ def main(args, **model_kwargs):
                                                                               1, args.fs)
 
             y_hat_1 = np.load(os.path.join(log_dir_1, 'yhat_test_{}.npy'.format(args.testset)))
-            yhat[:, :y_hat_1.shape[1]] = y_hat_1
+            yhat[:, :, :y_hat_1.shape[1]] = y_hat_1
             ygt_shape = y_gt.shape
             if args.cs:
                 print('|--- Traffic reconstruction using CS')
