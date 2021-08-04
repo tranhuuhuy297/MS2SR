@@ -362,10 +362,10 @@ def gwn_srls(yhat, y_gt, graphs, te_step, args):
     save_results(args.log_dir, 'test_{}_gwn_srls_cs_{}'.format(args.testset, args.cs), mlu, route_changes)
     np.save(os.path.join(args.log_dir, 'test_{}_gwn_srls_dyn_cs_{}'.format(args.testset, args.cs)), dynamicity)
 
-    np.save(os.path.join(args.log_dir, 'LinkLoads_gwn_srls_{}_cs_{}'.format(args.testset, args.cs)), LinkLoads)
-    np.save(os.path.join(args.log_dir, 'RoutingMatrices_gwn_srls_{}_cs_{}'.format(args.testset, args.cs)),
-            RoutingMatrices)
-    np.save(os.path.join(args.log_dir, 'TMs_gwn_srls_{}_cs_{}'.format(args.testset, args.cs)), TMs)
+    # np.save(os.path.join(args.log_dir, 'LinkLoads_gwn_srls_{}_cs_{}'.format(args.testset, args.cs)), LinkLoads)
+    # np.save(os.path.join(args.log_dir, 'RoutingMatrices_gwn_srls_{}_cs_{}'.format(args.testset, args.cs)),
+    #         RoutingMatrices)
+    # np.save(os.path.join(args.log_dir, 'TMs_gwn_srls_{}_cs_{}'.format(args.testset, args.cs)), TMs)
 
 
 def gt_srls(y_gt, graphs, te_step, args):
@@ -417,10 +417,10 @@ def gt_srls(y_gt, graphs, te_step, args):
     save_results(args.log_dir, 'test_{}_gt_srls_cs_{}'.format(args.testset, args.cs), mlu, route_changes)
     np.save(os.path.join(args.log_dir, 'test_{}_gt_srls_dyn_cs_{}'.format(args.testset, args.cs)), dynamicity)
 
-    np.save(os.path.join(args.log_dir, 'LinkLoads_gwn_srls_{}_cs_{}'.format(args.testset, args.cs)), LinkLoads)
-    np.save(os.path.join(args.log_dir, 'RoutingMatrices_gwn_srls_{}_cs_{}'.format(args.testset, args.cs)),
-            RoutingMatrices)
-    np.save(os.path.join(args.log_dir, 'TMs_gwn_srls_{}_cs_{}'.format(args.testset, args.cs)), TMs)
+    # np.save(os.path.join(args.log_dir, 'LinkLoads_gwn_srls_{}_cs_{}'.format(args.testset, args.cs)), LinkLoads)
+    # np.save(os.path.join(args.log_dir, 'RoutingMatrices_gwn_srls_{}_cs_{}'.format(args.testset, args.cs)),
+    #         RoutingMatrices)
+    # np.save(os.path.join(args.log_dir, 'TMs_gwn_srls_{}_cs_{}'.format(args.testset, args.cs)), TMs)
 
 
 def srls_p0(y_gt, graphs, te_step, args):
@@ -472,10 +472,10 @@ def srls_p0(y_gt, graphs, te_step, args):
     save_results(args.log_dir, 'test_{}_srls_p0'.format(args.testset), mlu, route_changes)
     np.save(os.path.join(args.log_dir, 'test_{}_srls_p0_dyn'.format(args.testset)), dynamicity)
 
-    np.save(os.path.join(args.log_dir, 'LinkLoads_gwn_srls_{}_cs_{}'.format(args.testset, args.cs)), LinkLoads)
-    np.save(os.path.join(args.log_dir, 'RoutingMatrices_gwn_srls_{}_cs_{}'.format(args.testset, args.cs)),
-            RoutingMatrices)
-    np.save(os.path.join(args.log_dir, 'TMs_gwn_srls_{}_cs_{}'.format(args.testset, args.cs)), TMs)
+    # np.save(os.path.join(args.log_dir, 'LinkLoads_gwn_srls_{}_cs_{}'.format(args.testset, args.cs)), LinkLoads)
+    # np.save(os.path.join(args.log_dir, 'RoutingMatrices_gwn_srls_{}_cs_{}'.format(args.testset, args.cs)),
+    #         RoutingMatrices)
+    # np.save(os.path.join(args.log_dir, 'TMs_gwn_srls_{}_cs_{}'.format(args.testset, args.cs)), TMs)
 
 
 def gt_ls2sr(y_gt, graph, te_step, args):
