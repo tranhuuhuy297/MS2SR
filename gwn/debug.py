@@ -131,7 +131,7 @@ def main(args, **model_kwargs):
                                                                           args.seq_len_y, args.loss_fn, args.type,
                                                                           1, args.fs)
 
-        y_hat_1 = np.load(os.path.join(log_dir_1, 'yhat_test_{}'.format(args.testset)))
+        y_hat_1 = np.load(os.path.join(log_dir_1, 'yhat_test_{}.npy'.format(args.testset)))
         yhat[:, top_k_index[y_hat_1.shape[1]]] = y_hat_1
         ygt_shape = y_gt.shape
         if args.cs:
