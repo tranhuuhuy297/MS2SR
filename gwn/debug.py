@@ -192,6 +192,8 @@ def main(args, **model_kwargs):
             y_cs = y_cs.cpu().data.numpy()
             y_real = y_real.cpu().data.numpy()
 
+            y_cs_1 = np.load(os.path.join(log_dir_1, 'y_cs_test_{}.npy'.format(args.testset)))
+            y_cs = y_cs_1
             if args.run_te != 'None':
                 if args.verbose:
                     print('x_gt ', x_gt.shape)
