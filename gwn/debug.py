@@ -135,7 +135,7 @@ def main(args, **model_kwargs):
                                                                               1, args.fs)
 
             y_hat_1 = np.load(os.path.join(log_dir_1, 'yhat_test_{}.npy'.format(args.testset)))
-            yhat[:, :, :y_hat_1.shape[1]] = y_hat_1
+            yhat[:, :, :1] = y_hat_1
             ygt_shape = y_gt.shape
             if args.cs:
                 print('|--- Traffic reconstruction using CS')
@@ -191,11 +191,6 @@ def main(args, **model_kwargs):
             y_gt = y_gt.cpu().data.numpy()
             y_cs = y_cs.cpu().data.numpy()
             y_real = y_real.cpu().data.numpy()
-
-            np.save(os.path.join(logger.log_dir, 'x_gt_test_{}'.format(args.testset)), x_gt)
-            np.save(os.path.join(logger.log_dir, 'y_gt_test_{}'.format(args.testset)), y_gt)
-            np.save(os.path.join(logger.log_dir, 'y_cs_test_{}'.format(args.testset)), y_cs)
-            np.save(os.path.join(logger.log_dir, 'y_real_test_{}'.format(args.testset)), y_real)
 
             if args.run_te != 'None':
                 if args.verbose:
