@@ -33,6 +33,7 @@ def get_args():
     parser.add_argument('--testset', type=int, default=-1,
                         choices=[-1, 0, 1, 2, 3, 4],
                         help='Test set, (default 0)')
+    parser.add_argument('--nrun', type=int, default=30)
 
     args = parser.parse_args()
     return args
@@ -77,6 +78,7 @@ def main():
 
                 if args.run_te != 'None':
                     cmd += ' --run_te {}'.format(args.run_te)
+                    cmd += ' --nrun {}'.format(args.nrun)
 
                 print(cmd)
                 os.system(cmd)
