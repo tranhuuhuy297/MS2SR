@@ -76,7 +76,8 @@ def main(args, **model_kwargs):
     else:
         raise ValueError('Dataset not found!')
 
-    sets = ['val', 'test_0', 'test_1', 'test_2', 'test_3', 'test_4']
+    sets = ['train', 'val', 'test_0', 'test_1', 'test_2', 'test_3', 'test_4']
+    y_gt_train = []
     for cs in [0, 1]:
         args.cs = cs
         for set in sets:
@@ -182,12 +183,6 @@ def main(args, **model_kwargs):
             x_gt = x_gt.cpu().data.numpy()  # [timestep, seq_x, seq_y]
             y_gt = y_gt.cpu().data.numpy()
             y_cs = y_cs.cpu().data.numpy()
-            y_real = y_real.cpu().data.numpy()
-
-            np.save(os.path.join(logger.log_dir, 'x_gt_test_{}'.format(args.testset)), x_gt)
-            np.save(os.path.join(logger.log_dir, 'y_gt_test_{}'.format(args.testset)), y_gt)
-            np.save(os.path.join(logger.log_dir, 'y_cs_test_{}'.format(args.testset)), y_cs)
-            np.save(os.path.join(logger.log_dir, 'y_real_test_{}'.format(args.testset)), y_real)
 
             if args.run_te != 'None':
                 if args.verbose:
@@ -197,7 +192,18 @@ def main(args, **model_kwargs):
                 print(' SET: {}'.format(set))
 
                 args.testset = set
-                run_te(x_gt, y_gt, y_cs, args)
+                # run_te(x_gt, y_gt, y_cs, args)
+
+                # run_srls_fix_max
+                te_step = x_gt.shape[0]
+                if set == 'train':
+                    y_gt_train = y_gt
+                all_data = np.reshape(y_gt, newshape=(-1, y_gt_train.shape[-1]))
+                max_tm = np.max(all_data, axis=0, keepdims=True)
+
+                graphs = createGraph_srls(os.path.join(args.datapath, 'topo/{}_node.csv'.format(args.dataset)),
+                                          os.path.join(args.datapath, 'topo/{}_edge.csv'.format(args.dataset)))
+                srls_fix_max(max_tm, y_gt, graphs, te_step, args)
 
             print(
                 '\n{} testset: {} x: {} y: {} topk:{} cs: {}'.format(args.dataset, args.testset, args.seq_len_x,

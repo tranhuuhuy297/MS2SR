@@ -484,6 +484,30 @@ def srls_p0(y_gt, graphs, te_step, args):
     # np.save(os.path.join(args.log_dir, 'TMs_gwn_srls_{}_cs_{}'.format(args.testset, args.cs)), TMs)
 
 
+def srls_fix_max(max_tm, y_gt, graphs, te_step, args):
+    print('srls_fix_max')
+    G, nNodes, nEdges, capacity, sp = graphs
+
+    solver = SRLS(sp, capacity, nNodes, nEdges, args.timeout)
+    LinkLoads, RoutingMatrices, TMs = [], [], []
+
+    for i in tqdm(range(te_step)):
+        u, solutions, linkloads, routingMxs = p2_srls_solver(solver, tm=max_tm, gt_tms=y_gt[i], nNodes=args.nNodes)
+        LinkLoads.append(linkloads)
+        TMs.append(y_gt[i])
+        if i == 0:
+            RoutingMatrices.append(routingMxs)
+
+    LinkLoads = np.stack(LinkLoads, axis=0)
+    RoutingMatrices = np.stack(RoutingMatrices, axis=0)
+    TMs = np.stack(TMs, axis=0)
+
+    np.save(os.path.join(args.log_dir, 'LinkLoads_srls_fix_max_{}_cs_{}'.format(args.testset, args.cs)), LinkLoads)
+    np.save(os.path.join(args.log_dir, 'RoutingMatrices_srls_fix_max_{}_cs_{}'.format(args.testset, args.cs)),
+            RoutingMatrices)
+    np.save(os.path.join(args.log_dir, 'TMs_srls_fix_max_{}_cs_{}'.format(args.testset, args.cs)), TMs)
+
+
 def gt_ls2sr(y_gt, graph, te_step, args):
     print('gt_ls2sr')
 
@@ -1007,6 +1031,10 @@ def run_te(x_gt, y_gt, yhat, args):
         graphs = createGraph_srls(os.path.join(args.datapath, 'topo/{}_node.csv'.format(args.dataset)),
                                   os.path.join(args.datapath, 'topo/{}_edge.csv'.format(args.dataset)))
         srls_p0(y_gt, graphs, te_step, args)
+    elif args.run_te == 'srls_fix':
+        graphs = createGraph_srls(os.path.join(args.datapath, 'topo/{}_node.csv'.format(args.dataset)),
+                                  os.path.join(args.datapath, 'topo/{}_edge.csv'.format(args.dataset)))
+        srls_fix(y_gt, graphs, te_step, args)
     elif args.run_te == 'gt_ls2sr':
         gt_ls2sr(y_gt, graph, te_step, args)
     elif args.run_te == 'p0':
