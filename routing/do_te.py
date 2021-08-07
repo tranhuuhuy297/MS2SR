@@ -1031,10 +1031,6 @@ def run_te(x_gt, y_gt, yhat, args):
         graphs = createGraph_srls(os.path.join(args.datapath, 'topo/{}_node.csv'.format(args.dataset)),
                                   os.path.join(args.datapath, 'topo/{}_edge.csv'.format(args.dataset)))
         srls_p0(y_gt, graphs, te_step, args)
-    elif args.run_te == 'srls_fix':
-        graphs = createGraph_srls(os.path.join(args.datapath, 'topo/{}_node.csv'.format(args.dataset)),
-                                  os.path.join(args.datapath, 'topo/{}_edge.csv'.format(args.dataset)))
-        srls_fix(y_gt, graphs, te_step, args)
     elif args.run_te == 'gt_ls2sr':
         gt_ls2sr(y_gt, graph, te_step, args)
     elif args.run_te == 'p0':
