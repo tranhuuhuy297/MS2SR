@@ -190,6 +190,7 @@ def main(args, **model_kwargs):
 
             y_cs_1 = np.load(os.path.join(log_dir_1, 'y_cs_test_{}.npy'.format(args.testset)))
             y_cs = np.copy(y_cs_1)
+            print('\n{} testset: {} mon_rate:{} cs: {}'.format(args.dataset, args.testset, args.mon_rate, args.cs))
             if args.run_te != 'None':
                 if args.verbose:
                     print('x_gt ', x_gt.shape)
