@@ -276,16 +276,15 @@ def main(args, **model_kwargs):
     np.save(os.path.join(logger.log_dir, 'y_cs_test_{}'.format(args.testset)), y_cs)
     np.save(os.path.join(logger.log_dir, 'y_real_test_{}'.format(args.testset)), y_real)
 
+    print('\n{} testset: {} mon_rate:{} cs: {}'.format(args.dataset, args.testset, args.mon_rate, args.cs))
     if args.run_te != 'None':
         if args.verbose:
             print('x_gt ', x_gt.shape)
             print('y_gt ', y_gt.shape)
             print('y_cs ', y_cs.shape)
+
         run_te(x_gt, y_gt, y_cs, args)
 
-    print(
-        '\n{} testset: {} x: {} y: {} topk:{} cs: {}'.format(args.dataset, args.testset, args.seq_len_x, args.seq_len_y,
-                                                             args.mon_rate, args.cs))
     print('\n            ----------------------------\n')
 
 
