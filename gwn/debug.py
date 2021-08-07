@@ -88,8 +88,8 @@ def main(args, **model_kwargs):
     args.dataset = 'abilene_tm'
     args.device = 'cuda:0'
     args.fs = 'train'
-    mon_rates = [1, 2, 3, 4]
-    testsets = [0, 1, 2, 3, 4]
+    mon_rates = [1, 2, 3]
+    testsets = [3]
     for testset in testsets:
         for mon_rate in mon_rates:
             args.mon_rate = mon_rate
