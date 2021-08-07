@@ -76,9 +76,23 @@ def main(args, **model_kwargs):
     else:
         raise ValueError('Dataset not found!')
 
+    args.test = True
+    args.run_te = 'gwn_srls'
+    args.cs = 1
+    args.do_graph_conv = True
+    args.aptonly = True
+    args.addaptadj = True
+    args.randomadj = True
+    args.train_batch_size = 64
+    args.val_batch_size = 64
+    args.dataset = 'abilene_tm'
+    args.device = 'cuda:0'
+    args.fs = 'train'
+    mon_rates = [1, 2, 3, 4]
+
     sets = ['train', 'val', 'test_0', 'test_1', 'test_2', 'test_3', 'test_4']
     y_gt_train = []
-    for cs in [0, 1]:
+    for cs in [1]:
         args.cs = cs
         for set in sets:
             if set == 'train' or set == 'val':

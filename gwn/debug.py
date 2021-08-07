@@ -130,9 +130,7 @@ def main(args, **model_kwargs):
             top_k_index = test_loader.dataset.Topkindex
 
             # load yhat of 1% mon_rate
-            log_dir_1 = '../../logs/im2021_cs/{}_{}_{}_{}_{}_{}_{}_{}'.format(args.model, args.dataset, args.seq_len_x,
-                                                                              args.seq_len_y, args.loss_fn, args.type,
-                                                                              1, args.fs)
+            log_dir_1 = '/home/anle/logs/im2021_cs/gwn_abilene_tm_12_12_mae_p2_1_train/'
 
             y_hat_1 = np.load(os.path.join(log_dir_1, 'yhat_test_{}.npy'.format(args.testset)))
             yhat[:, :, :1] = y_hat_1
@@ -189,8 +187,6 @@ def main(args, **model_kwargs):
             # run traffic engineering
             x_gt = x_gt.cpu().data.numpy()  # [timestep, seq_x, seq_y]
             y_gt = y_gt.cpu().data.numpy()
-            y_cs = y_cs.cpu().data.numpy()
-            y_real = y_real.cpu().data.numpy()
 
             y_cs_1 = np.load(os.path.join(log_dir_1, 'y_cs_test_{}.npy'.format(args.testset)))
             y_cs = y_cs_1
