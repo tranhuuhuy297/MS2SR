@@ -318,7 +318,7 @@ def gwn_srls(yhat, y_gt, graphs, te_step, args):
     print('GWN SRLS')
     G, nNodes, nEdges, capacity, sp = graphs
 
-    for run_test in range(30):
+    for run_test in range(args.nrun):
 
         results = []
         solver = SRLS(sp, capacity, nNodes, nEdges, args.timeout)
