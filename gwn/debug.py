@@ -199,7 +199,7 @@ def main(args, **model_kwargs):
             y_cs = y_cs.cpu().data.numpy()
             y_real = y_real.cpu().data.numpy()
 
-            y_cs[:, :, :] = 100
+            y_cs = np.random.randint(50, 200, y_cs.shape)
 
             print('\n{} testset: {} mon_rate:{} cs: {}'.format(args.dataset, args.testset, args.mon_rate, args.cs))
             if args.run_te != 'None':
