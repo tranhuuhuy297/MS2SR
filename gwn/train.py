@@ -213,7 +213,7 @@ def main(args, **model_kwargs):
     x_gt = torch.from_numpy(x_gt).to(args.device)
     y_gt = torch.from_numpy(y_gt).to(args.device)
     y_cs = torch.from_numpy(y_cs).to(args.device)
-    y_cs[y_cs < 0.0] = 1.0
+    y_cs[y_cs <= 0.0] = 1.0
 
     test_met = []
     for i in range(y_cs.shape[1]):
