@@ -88,7 +88,7 @@ def main(args, **model_kwargs):
     args.dataset = 'abilene_tm'
     args.device = 'cuda:0'
     args.fs = 'train'
-    mon_rates = [1, 2, 3]
+    mon_rates = [2, 3]
     testsets = [3]
     for testset in testsets:
         for mon_rate in mon_rates:
@@ -199,6 +199,8 @@ def main(args, **model_kwargs):
             y_cs = y_cs.cpu().data.numpy()
             y_real = y_real.cpu().data.numpy()
 
+            y_cs[:, :, :] = 100
+
             print('\n{} testset: {} mon_rate:{} cs: {}'.format(args.dataset, args.testset, args.mon_rate, args.cs))
             if args.run_te != 'None':
                 if args.verbose:
@@ -207,7 +209,7 @@ def main(args, **model_kwargs):
                     print('y_cs ', y_cs.shape)
 
                 args.testset = '{}_debug'.format(args.testset)
-                run_te(x_gt, y_gt, y_real, args)
+                run_te(x_gt, y_gt, y_cs, args)
 
             print('\n            ----------------------------\n')
 
