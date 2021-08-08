@@ -132,64 +132,67 @@ def main(args, **model_kwargs):
             # load yhat of 1% mon_rate
             log_dir_1 = '/home/anle/logs/im2021_cs/gwn_abilene_tm_12_12_mae_p2_1_train/'
 
-            # y_hat_1 = np.load(os.path.join(log_dir_1, 'yhat_test_{}.npy'.format(args.testset)))
-            # yhat[:, :, :1] = y_hat_1
-            # ygt_shape = y_gt.shape
-            # if args.cs:
-            #     print('|--- Traffic reconstruction using CS')
-            #     y_cs = np.zeros(shape=(ygt_shape[0], 1, ygt_shape[-1]))
-            #
-            #     # obtain psi, G, R
-            #     psi_save_path = os.path.join(args.datapath, 'cs/saved_psi/')
-            #     if not os.path.exists(psi_save_path):
-            #         os.makedirs(psi_save_path)
-            #     psi_save_path = os.path.join(psi_save_path, '{}_{}_{}_{}_psi.pkl'.format(args.dataset,
-            #                                                                              args.mon_rate,
-            #                                                                              args.seq_len_x,
-            #                                                                              args.seq_len_y))
-            #     if not os.path.isfile(psi_save_path):
-            #         print('|--- Calculating psi, phi')
-            #
-            #         psi = get_psi(args)
-            #         obj = {
-            #             'psi': psi,
-            #         }
-            #         with open(psi_save_path, 'wb') as fp:
-            #             pickle.dump(obj, fp, protocol=pickle.HIGHEST_PROTOCOL)
-            #             fp.close()
-            #     else:
-            #         print('|--- Loading psi, phi from {}'.format(psi_save_path))
-            #
-            #         with open(psi_save_path, 'rb') as fp:
-            #             obj = pickle.load(fp)
-            #             fp.close()
-            #         psi = obj['psi']
-            #
-            #     phi = get_phi(top_k_index, total_series)
-            #
-            #     # traffic reconstruction using compressive sensing
-            #     A = np.dot(phi, psi.matrix)
-            #     for i in range(y_cs.shape[0]):
-            #         sparse = Solver_l0(A, max_iter=100, sparsity=int(args.mon_rate / 100 * y_cs.shape[-1])).fit(
-            #             yhat[i].T)
-            #         y_cs[i] = np.dot(psi.matrix, sparse).T
-            #
-            # else:
-            #     print('|--- No traffic reconstruction')
-            #     y_cs = np.ones(shape=(ygt_shape[0], 1, ygt_shape[-1]))
-            #     y_cs[:, :, top_k_index] = yhat
+            y_hat_1 = np.load(os.path.join(log_dir_1, 'yhat_test_{}.npy'.format(args.testset)))
+            yhat[:, :, :1] = y_hat_1
+            ygt_shape = y_gt.shape
+            if args.cs:
+                print('|--- Traffic reconstruction using CS')
+                y_cs = np.zeros(shape=(ygt_shape[0], 1, ygt_shape[-1]))
 
-            # x_gt = torch.from_numpy(x_gt).to(args.device)
-            # y_gt = torch.from_numpy(y_gt).to(args.device)
-            # y_cs = torch.from_numpy(y_cs).to(args.device)
-            # y_cs[y_cs < 0.0] = 0.0
-            #
-            # # run traffic engineering
-            # x_gt = x_gt.cpu().data.numpy()  # [timestep, seq_x, seq_y]
-            # y_gt = y_gt.cpu().data.numpy()
+                # obtain psi, G, R
+                psi_save_path = os.path.join(args.datapath, 'cs/saved_psi/')
+                if not os.path.exists(psi_save_path):
+                    os.makedirs(psi_save_path)
+                psi_save_path = os.path.join(psi_save_path, '{}_{}_{}_{}_psi.pkl'.format(args.dataset,
+                                                                                         args.mon_rate,
+                                                                                         args.seq_len_x,
+                                                                                         args.seq_len_y))
+                if not os.path.isfile(psi_save_path):
+                    print('|--- Calculating psi, phi')
+
+                    psi = get_psi(args)
+                    obj = {
+                        'psi': psi,
+                    }
+                    with open(psi_save_path, 'wb') as fp:
+                        pickle.dump(obj, fp, protocol=pickle.HIGHEST_PROTOCOL)
+                        fp.close()
+                else:
+                    print('|--- Loading psi, phi from {}'.format(psi_save_path))
+
+                    with open(psi_save_path, 'rb') as fp:
+                        obj = pickle.load(fp)
+                        fp.close()
+                    psi = obj['psi']
+
+                phi = get_phi(top_k_index, total_series)
+
+                # traffic reconstruction using compressive sensing
+                A = np.dot(phi, psi.matrix)
+                for i in range(y_cs.shape[0]):
+                    sparse = Solver_l0(A, max_iter=100, sparsity=int(args.mon_rate / 100 * y_cs.shape[-1])).fit(
+                        yhat[i].T)
+                    y_cs[i] = np.dot(psi.matrix, sparse).T
+
+            else:
+                print('|--- No traffic reconstruction')
+                y_cs = np.ones(shape=(ygt_shape[0], 1, ygt_shape[-1]))
+                y_cs[:, :, top_k_index] = yhat
+
+            x_gt = torch.from_numpy(x_gt).to(args.device)
+            y_gt = torch.from_numpy(y_gt).to(args.device)
+            y_cs = torch.from_numpy(y_cs).to(args.device)
+            y_cs[y_cs < 0.0] = 0.0
+
+            # run traffic engineering
+            x_gt = x_gt.cpu().data.numpy()  # [timestep, seq_x, seq_y]
+            y_gt = y_gt.cpu().data.numpy()
 
             y_cs_1 = np.load(os.path.join(log_dir_1, 'y_cs_test_{}.npy'.format(args.testset)))
-            y_cs = np.copy(y_cs_1)
+            means = np.mean(y_cs_1[:, 0, :], dim=0)
+            tk = np.argsort(means)[::-1]
+            y_cs[:, :, tk[:10]] = y_cs_1[:, :, tk[:10]]
+
             print('\n{} testset: {} mon_rate:{} cs: {}'.format(args.dataset, args.testset, args.mon_rate, args.cs))
             if args.run_te != 'None':
                 if args.verbose:
