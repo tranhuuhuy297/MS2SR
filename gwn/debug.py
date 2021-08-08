@@ -180,6 +180,25 @@ def main(args, **model_kwargs):
 
             y_cs[y_cs < 0.0] = 0.0
 
+            x_gt = torch.from_numpy(x_gt).to(args.device)
+            y_gt = torch.from_numpy(y_gt).to(args.device)
+            y_cs = torch.from_numpy(y_cs).to(args.device)
+            y_cs[y_cs < 0.0] = 0.0
+
+            test_met = []
+            for i in range(y_cs.shape[1]):
+                pred = y_cs[:, i, :]
+                real = y_real[:, i, :]
+                test_met.append([x.item() for x in utils.calc_metrics(pred, real)])
+            test_met_df = pd.DataFrame(test_met, columns=['rse', 'mae', 'mse', 'mape', 'rmse']).rename_axis('t')
+            print('Prediction Accuracy:')
+            print(test_met_df)
+
+            x_gt = x_gt.cpu().data.numpy()  # [timestep, seq_x, seq_y]
+            y_gt = y_gt.cpu().data.numpy()
+            y_cs = y_cs.cpu().data.numpy()
+            y_real = y_real.cpu().data.numpy()
+
             print('\n{} testset: {} mon_rate:{} cs: {}'.format(args.dataset, args.testset, args.mon_rate, args.cs))
             if args.run_te != 'None':
                 if args.verbose:
@@ -190,10 +209,6 @@ def main(args, **model_kwargs):
                 args.testset = '{}_debug'.format(args.testset)
                 run_te(x_gt, y_gt, y_cs, args)
 
-            print(
-                '\n{} testset: {} x: {} y: {} topk:{} cs: {}'.format(args.dataset, args.testset, args.seq_len_x,
-                                                                     args.seq_len_y,
-                                                                     args.mon_rate, args.cs))
             print('\n            ----------------------------\n')
 
 
