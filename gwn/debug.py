@@ -88,7 +88,7 @@ def main(args, **model_kwargs):
     args.dataset = 'abilene_tm'
     args.device = 'cuda:0'
     args.fs = 'train'
-    mon_rates = [2]
+    mon_rates = [1, 2, 3]
     testsets = [3]
     for testset in testsets:
         for mon_rate in mon_rates:
@@ -122,18 +122,17 @@ def main(args, **model_kwargs):
             # Metrics on test data
             engine.model.load_state_dict(torch.load(logger.best_model_save_path))
             with torch.no_grad():
-                test_met_df, x_gt, y_gt, yhat, y_real = engine.test(test_loader, engine.model, args.out_seq_len)
+                test_met_df, x_gt, y_gt, yhat, y_real, y_real_top_k = \
+                    engine.test(test_loader, engine.model, args.out_seq_len)
 
             x_gt = x_gt.cpu().data.numpy()  # [timestep, seq_x, seq_y]
             y_gt = y_gt.cpu().data.numpy()
             yhat = yhat.cpu().data.numpy()
+            y_real_top_k = y_real_top_k.cpu().data.numpy()
             top_k_index = test_loader.dataset.Topkindex
 
             # load yhat of 1% mon_rate
-            log_dir_1 = '/home/anle/logs/im2021_cs/gwn_abilene_tm_12_12_mae_p2_1_train/'
-
-            y_hat_1 = np.load(os.path.join(log_dir_1, 'yhat_test_{}.npy'.format(args.testset)))
-            yhat[:, :, :1] = y_hat_1
+            yhat = y_real_top_k
             ygt_shape = y_gt.shape
             if args.cs:
                 print('|--- Traffic reconstruction using CS')
@@ -180,12 +179,6 @@ def main(args, **model_kwargs):
                 y_cs[:, :, top_k_index] = yhat
 
             y_cs[y_cs < 0.0] = 0.0
-
-            # run traffic engineering
-            y_cs_1 = np.load(os.path.join(log_dir_1, 'y_cs_test_{}.npy'.format(args.testset)))
-            means = np.mean(y_cs_1[:, 0, :], axis=0)
-            tk = np.argsort(means)[::-1]
-            # y_cs[:, :, tk[:10]] = y_cs_1[:, :, tk[:10]]
 
             print('\n{} testset: {} mon_rate:{} cs: {}'.format(args.dataset, args.testset, args.mon_rate, args.cs))
             if args.run_te != 'None':

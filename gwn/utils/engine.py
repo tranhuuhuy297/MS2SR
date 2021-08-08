@@ -109,7 +109,7 @@ class Trainer():
             real = y_real_top_k[:, i, :]
             test_met.append([x.item() for x in calc_metrics(pred, real)])
         test_met_df = pd.DataFrame(test_met, columns=['rse', 'mae', 'mse', 'mape', 'rmse']).rename_axis('t')
-        return test_met_df, x_gt, y_gt, yhat, y_real
+        return test_met_df, x_gt, y_gt, yhat, y_real, y_real_top_k
 
     def eval(self, val_loader):
         """Run validation."""

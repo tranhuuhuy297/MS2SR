@@ -154,7 +154,7 @@ def main(args, **model_kwargs):
     # Metrics on test data
     engine.model.load_state_dict(torch.load(logger.best_model_save_path))
     with torch.no_grad():
-        test_met_df, x_gt, y_gt, yhat, y_real = engine.test(test_loader, engine.model, args.out_seq_len)
+        test_met_df, x_gt, y_gt, yhat, y_real, y_real_top_k = engine.test(test_loader, engine.model, args.out_seq_len)
         test_met_df.round(6).to_csv(os.path.join(logger.log_dir, 'test_metrics.csv'))
         print('Prediction Accuracy:')
         print(utils.summary(logger.log_dir))
