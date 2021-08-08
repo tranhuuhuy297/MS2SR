@@ -187,6 +187,7 @@ def main(args, **model_kwargs):
             # run traffic engineering
             x_gt = x_gt.cpu().data.numpy()  # [timestep, seq_x, seq_y]
             y_gt = y_gt.cpu().data.numpy()
+            y_cs = y_cs.cpu().data.numpy()
 
             y_cs_1 = np.load(os.path.join(log_dir_1, 'y_cs_test_{}.npy'.format(args.testset)))
             means = np.mean(y_cs_1[:, 0, :], axis=0)
