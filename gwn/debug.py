@@ -179,16 +179,9 @@ def main(args, **model_kwargs):
                 y_cs = np.ones(shape=(ygt_shape[0], 1, ygt_shape[-1]))
                 y_cs[:, :, top_k_index] = yhat
 
-            x_gt = torch.from_numpy(x_gt).to(args.device)
-            y_gt = torch.from_numpy(y_gt).to(args.device)
-            y_cs = torch.from_numpy(y_cs).to(args.device)
             y_cs[y_cs < 0.0] = 0.0
 
             # run traffic engineering
-            x_gt = x_gt.cpu().data.numpy()  # [timestep, seq_x, seq_y]
-            y_gt = y_gt.cpu().data.numpy()
-            y_cs = y_cs.cpu().data.numpy()
-
             y_cs_1 = np.load(os.path.join(log_dir_1, 'y_cs_test_{}.npy'.format(args.testset)))
             means = np.mean(y_cs_1[:, 0, :], axis=0)
             tk = np.argsort(means)[::-1]
