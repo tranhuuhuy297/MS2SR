@@ -18,3 +18,7 @@ abilene_tm --test --run_te --random_rate 10
 # Variance
 
 python plot_traffic.py --dataset abilene_tm --random_rate 20 --cs 1 --top_k_random (input h for hour, d for day, m for month)
+
+# VAE 
+
+https://colab.research.google.com/drive/1A-Xz2I6I7lplAhy5fmbuBVQlNMzMmpWn?usp=sharing
