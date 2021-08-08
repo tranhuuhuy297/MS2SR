@@ -189,7 +189,7 @@ def main(args, **model_kwargs):
             y_gt = y_gt.cpu().data.numpy()
 
             y_cs_1 = np.load(os.path.join(log_dir_1, 'y_cs_test_{}.npy'.format(args.testset)))
-            means = np.mean(y_cs_1[:, 0, :], dim=0)
+            means = np.mean(y_cs_1[:, 0, :], axis=0)
             tk = np.argsort(means)[::-1]
             y_cs[:, :, tk[:10]] = y_cs_1[:, :, tk[:10]]
 
