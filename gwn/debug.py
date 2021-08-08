@@ -207,7 +207,7 @@ def main(args, **model_kwargs):
                     print('y_cs ', y_cs.shape)
 
                 args.testset = '{}_debug'.format(args.testset)
-                run_te(x_gt, y_gt, y_cs, args)
+                run_te(x_gt, y_gt, y_real, args)
 
             print('\n            ----------------------------\n')
 
