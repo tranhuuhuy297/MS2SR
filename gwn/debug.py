@@ -207,6 +207,8 @@ def main(args, **model_kwargs):
             r = np.setdiff1d(np.arange(total_series), top_k_index)
             y_cs[:, :, topk_y_reals[50:]] = y_real[:, :, topk_y_reals[50:]]
 
+            y_cs = y_real
+
             print('\n{} testset: {} mon_rate:{} cs: {}'.format(args.dataset, args.testset, args.mon_rate, args.cs))
             if args.run_te != 'None':
                 if args.verbose:
