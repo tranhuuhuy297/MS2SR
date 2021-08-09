@@ -88,7 +88,7 @@ def main(args, **model_kwargs):
     args.dataset = 'abilene_tm'
     args.device = 'cuda:0'
     args.fs = 'train'
-    mon_rates = [3]
+    mon_rates = [1]
     testsets = [3]
     for testset in testsets:
         for mon_rate in mon_rates:
@@ -202,13 +202,11 @@ def main(args, **model_kwargs):
             mean_y_reals = np.mean(y_real[:, 0, :], axis=0)
             topk_y_reals = np.argsort(mean_y_reals)[::-1]
 
-            log_dir_1 = '/home/anle/logs/im2021_cs/gwn_abilene_tm_12_12_mae_p2_1_train/'
-            y_cs_1 = np.load(os.path.join(log_dir_1, 'y_cs_test_{}.npy'.format(args.testset)))
+            log_dir_2 = '/home/anle/logs/im2021_cs/gwn_abilene_tm_12_12_mae_p2_1_train/'
+            y_cs_2 = np.load(os.path.join(log_dir_2, 'y_cs_test_{}.npy'.format(args.testset)))
             r = np.setdiff1d(np.arange(total_series), top_k_index)
 
-            flows = [1, 5, 6, 7, 8, 9, 10]
-
-            y_cs[:, :, topk_y_reals[flows]] = y_cs_1[:, :, topk_y_reals[flows]]
+            y_cs[:, :, topk_y_reals[10:]] = y_cs_2[:, :, topk_y_reals[10:]]
 
             print('\n{} testset: {} mon_rate:{} cs: {}'.format(args.dataset, args.testset, args.mon_rate, args.cs))
             if args.run_te != 'None':
