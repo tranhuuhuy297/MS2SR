@@ -205,7 +205,7 @@ def main(args, **model_kwargs):
             log_dir_1 = '/home/anle/logs/im2021_cs/gwn_abilene_tm_12_12_mae_p2_1_train/'
             y_cs_1 = np.load(os.path.join(log_dir_1, 'y_cs_test_{}.npy'.format(args.testset)))
             r = np.setdiff1d(np.arange(total_series), top_k_index)
-            y_cs[:, :, topk_y_reals[10:]] = y_real[:, :, topk_y_reals[10:]]
+            y_cs[:, :, topk_y_reals[5:]] = y_real[:, :, topk_y_reals[5:]]
 
             print('\n{} testset: {} mon_rate:{} cs: {}'.format(args.dataset, args.testset, args.mon_rate, args.cs))
             if args.run_te != 'None':
