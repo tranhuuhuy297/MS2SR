@@ -206,7 +206,7 @@ def main(args, **model_kwargs):
             y_cs_2 = np.load(os.path.join(log_dir_2, 'y_cs_test_{}.npy'.format(args.testset)))
             r = np.setdiff1d(np.arange(total_series), top_k_index)
 
-            y_cs[:, :, topk_y_reals[10:]] = y_cs_2[:, :, topk_y_reals[10:]]
+            y_cs[:, :, topk_y_reals[1]] = y_cs_2[:, :, topk_y_reals[1]]
 
             print('\n{} testset: {} mon_rate:{} cs: {}'.format(args.dataset, args.testset, args.mon_rate, args.cs))
             if args.run_te != 'None':
