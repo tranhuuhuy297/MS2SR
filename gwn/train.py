@@ -36,8 +36,8 @@ def get_psi(args, samples=4000, iterator=100):
 
     D = DCTDictionary(size_D, size_D)
 
-    psi, _ = KSVD(D, MatchingPursuit, int(args.mon_rate / 100 * X.shape[1])).fit(X_temp, iterator)
-    return psi
+    psi, alpha = KSVD(D, MatchingPursuit, int(args.mon_rate / 100 * X.shape[1])).fit(X_temp, iterator)
+    return psi, alpha
 
 
 def get_phi(top_k_index, nseries):
@@ -181,9 +181,10 @@ def main(args, **model_kwargs):
         if not os.path.isfile(psi_save_path):
             print('|--- Calculating psi, phi')
 
-            psi = get_psi(args)
+            psi, alpha = get_psi(args)
             obj = {
                 'psi': psi,
+                'alpha': alpha
             }
             with open(psi_save_path, 'wb') as fp:
                 pickle.dump(obj, fp, protocol=pickle.HIGHEST_PROTOCOL)
