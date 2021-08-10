@@ -207,7 +207,7 @@ def main(args, **model_kwargs):
 
             check_positive = sparse >= 0
             print(check_positive)
-            if check_positive.any() is False:
+            if check_positive.all() is False:
                 raise RuntimeError
 
             y_cs[i] = np.dot(psi.matrix, sparse).T
