@@ -35,6 +35,8 @@ def get_args():
     parser.add_argument('--testset', type=int, default=-1,
                         choices=[-1, 0, 1, 2, 3, 4],
                         help='Test set, (default 0)')
+    parser.add_argument('--nrun', type=int, default=30)
+    parser.add_argument('--timeout', type=float, default=1.0)
 
     args = parser.parse_args()
     return args
@@ -75,6 +77,8 @@ def main():
 
                 if args.run_te != 'None':
                     cmd += ' --run_te {}'.format(args.run_te)
+                    cmd += ' --timeout {}'.format(args.timeout)
+                    cmd += ' --nrun {}'.format(args.nrun)
 
                 os.system(cmd)
                 iteration.set_description(
