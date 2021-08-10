@@ -196,6 +196,7 @@ def main(args, **model_kwargs):
                 obj = pickle.load(fp)
                 fp.close()
             psi = obj['psi']
+            alpha = obj['alpha']
 
         phi = get_phi(top_k_index, total_series)
 
@@ -203,6 +204,11 @@ def main(args, **model_kwargs):
         A = np.dot(phi, psi.matrix)
         for i in range(y_cs.shape[0]):
             sparse = Solver_l0(A, max_iter=100, sparsity=int(args.mon_rate / 100 * y_cs.shape[-1])).fit(yhat[i].T)
+
+            check_positive = sparse >= 0
+            if check_positive.any() is False:
+                raise RuntimeError
+
             y_cs[i] = np.dot(psi.matrix, sparse).T
 
     else:
