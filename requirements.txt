@@ -1,0 +1,13 @@
+numpy~=1.18.1
+torch~=1.8.0
+scipy~=1.4.1
+pandas~=1.2.0
+joblib~=1.0.0
+matplotlib~=3.3.3
+durbango~=0.23
+tqdm~=4.42.1
+cvxpy~=1.1.12
+sklearn~=0.0
+scikit-learn~=0.24.0
+networkx~=2.5
+PuLP~=2.4

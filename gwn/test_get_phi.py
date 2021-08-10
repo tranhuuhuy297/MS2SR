@@ -1,3 +1,6 @@
+from dictionary import DCTDictionary
+from ksvd import KSVD
+from pursuit import MatchingPursuit, Solver_l0
 import pickle
 
 import numpy as np
@@ -9,9 +12,10 @@ a = np.random.randint(0, 1000, (1000, 1000))
 #     pickle.dump(b, fp, protocol=pickle.HIGHEST_PROTOCOL)
 #     fp.close()
 
-with open('test.pkl', 'rb') as fp:
-    c = pickle.load(fp)
-    fp.close()
+file = 'abilene_tm_2_12_12_psi.pkl'
+psi_save_path = '/home/anle/data/cs/saved_psi/{}'.format(file)
 
-print(c.get_device())
-print(c.is_cuda)
+with open(psi_save_path, 'rb') as fp:
+    obj = pickle.load(fp)
+    fp.close()
+psi = obj['psi']
