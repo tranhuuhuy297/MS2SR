@@ -206,8 +206,7 @@ def main(args, **model_kwargs):
             sparse = Solver_l0(A, max_iter=100, sparsity=int(args.mon_rate / 100 * y_cs.shape[-1])).fit(yhat[i].T)
 
             check_positive = sparse >= 0
-            check_positive = check_positive.astype(np.int)
-            if not (np.sum(check_positive) == sparse.size()):
+            if not (check_positive.all() is True):
                 raise RuntimeError
 
             y_cs[i] = np.dot(psi.matrix, sparse).T
