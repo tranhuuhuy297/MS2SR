@@ -75,7 +75,8 @@ class MatchingPursuit(Pursuit):
                 # coeffs[coeffs < 0] = 0
                 i += 1
                 if self.sparsity:
-                    finished = np.count_nonzero(coeffs) >= self.sparsity
+#                     finished = np.count_nonzero(coeffs) >= self.sparsity
+                    finished = np.sum(coeffs >= 0) >= self.sparsity
                 else:
                     finished = (np.linalg.norm(residual) ** 2 < n * self.tol ** 2) or i >= n / 2
             self.alphas.append(coeffs)
@@ -168,7 +169,8 @@ class Solver_l0(Solver):
                 # coeffs[coeffs < 0] = 0
                 i += 1
                 if self.sparsity:
-                    finished = np.count_nonzero(coeffs) >= self.sparsity
+#                     finished = np.count_nonzero(coeffs) >= self.sparsity
+                    finished = np.sum(coeffs >= 0) >= self.sparsity
                 else:
                     finished = (np.linalg.norm(residual) ** 2 < n * self.tol ** 2) or i >= n / 2
             self.alphas.append(coeffs)
