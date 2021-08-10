@@ -19,3 +19,7 @@ with open(psi_save_path, 'rb') as fp:
     obj = pickle.load(fp)
     fp.close()
 psi = obj['psi']
+alpha = obj['alpha']
+
+alpha = alpha.T
+print(np.where(alpha[alpha < 0]))
