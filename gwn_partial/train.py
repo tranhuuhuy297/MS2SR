@@ -214,10 +214,9 @@ def main(args, **model_kwargs):
         print('|--- No traffic reconstruction')
         y_cs = np.zeros(shape=(ygt_shape[0], 1, ygt_shape[-1]))
 
-        for i in range(ygt_shape[0]):
-            y_cs[i, 0, topk_index[i]] = yhat[i]
+    for i in range(ygt_shape[0]):
+        y_cs[i, 0, topk_index[i]] = yhat[i]
 
-    y_cs[y_cs < 0.0] = 0.0
     x_gt = torch.from_numpy(x_gt).to(args.device)
     y_gt = torch.from_numpy(y_gt).to(args.device)
     y_cs = torch.from_numpy(y_cs).to(args.device)
