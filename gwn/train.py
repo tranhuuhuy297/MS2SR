@@ -1,7 +1,5 @@
 import sys
 
-import numpy as np
-
 sys.path.append('..')
 
 import time
@@ -208,10 +206,10 @@ def main(args, **model_kwargs):
 
     else:
         print('|--- No traffic reconstruction')
-        y_cs = np.ones(shape=(ygt_shape[0], 1, ygt_shape[-1]))
-        # y_cs[:] = np.mean(yhat)
+        y_cs = np.zeros(shape=(ygt_shape[0], 1, ygt_shape[-1]))
         y_cs[:, :, top_k_index] = yhat
 
+    y_cs[:, :, top_k_index] = yhat
     x_gt = torch.from_numpy(x_gt).to(args.device)
     y_gt = torch.from_numpy(y_gt).to(args.device)
     y_cs = torch.from_numpy(y_cs).to(args.device)
