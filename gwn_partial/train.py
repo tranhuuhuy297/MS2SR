@@ -24,17 +24,18 @@ warnings.filterwarnings("ignore", category=UserWarning)
 def get_psi(args, samples=4000, iterator=100):
     X = utils.load_raw(args)
 
-    X = X[:samples, :]
+    X = X[:samples]
 
-    X_temp = np.array([np.max(X[args.seq_len_x + i: args.seq_len_x + i + args.seq_len_y], axis=0) for i in
+    X_temp = np.array([np.max(X[args.seq_len_x + i:
+                                args.seq_len_x + i + args.seq_len_y], axis=0) for i in
                        range(samples - args.seq_len_x - args.seq_len_y)]).T
 
     size_D = int(math.sqrt(X.shape[1]))
 
     D = DCTDictionary(size_D, size_D)
 
-    psi, _ = KSVD(D, MatchingPursuit, int(args.mon_rate / 100 * X.shape[1])).fit(X_temp, iterator)
-    return psi
+    psi, alpha = KSVD(D, MatchingPursuit, int(args.mon_rate / 100 * X.shape[1])).fit(X_temp, iterator)
+    return psi, alpha
 
 
 def get_phi(top_k_index, nseries):
@@ -180,12 +181,13 @@ def main(args, **model_kwargs):
                                                                                  args.seq_len_y))
         if not os.path.isfile(psi_save_path):
             print('|--- Calculating psi, phi')
-            psi = get_psi(args)
+            psi, alpha = get_psi(args)
             phi = get_phi(topk_index, total_series)
             print('Psi: ', psi.shape)
             print('Phi: ', phi.shape)
             obj = {
                 'psi': psi,
+                'alpha': alpha
             }
             with open(psi_save_path, 'wb') as fp:
                 pickle.dump(obj, fp, protocol=pickle.HIGHEST_PROTOCOL)
@@ -244,11 +246,16 @@ def main(args, **model_kwargs):
     x_gt = x_gt.cpu().data.numpy()  # [timestep, seq_x, seq_y]
     y_gt = y_gt.cpu().data.numpy()
     y_cs = y_cs.cpu().data.numpy()
+    y_real = y_real.cpu().data.numpy()
+
+    np.save(os.path.join(logger.log_dir, 'x_gt_test_{}'.format(args.testset)), x_gt)
+    np.save(os.path.join(logger.log_dir, 'y_gt_test_{}'.format(args.testset)), y_gt)
+    np.save(os.path.join(logger.log_dir, 'y_cs_test_{}'.format(args.testset)), y_cs)
+    np.save(os.path.join(logger.log_dir, 'y_real_test_{}'.format(args.testset)), y_real)
+    print('\n{} testset: {} mon_rate:{} cs: {}'.format(args.dataset, args.testset, args.mon_rate, args.cs))
 
     if args.run_te != 'None':
         run_te(x_gt, y_gt, y_cs, args)
-    print('{} testset: {} x: {} y: {} topk:{} cs: {}'.format(args.dataset, args.testset, args.seq_len_x, args.seq_len_y,
-                                                             args.mon_rate, args.cs))
 
 
 if __name__ == "__main__":
