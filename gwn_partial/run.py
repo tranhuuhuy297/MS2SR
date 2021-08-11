@@ -4,6 +4,7 @@ import subprocess as sp
 
 from tqdm import trange
 
+MON_RATE = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 25, 30]
 
 def call(args):
     p = sp.run(args=args,
@@ -31,7 +32,7 @@ def get_args():
                                                                                    'gt',
                                                                                    'pred'],
                         default='train')
-    parser.add_argument('--mon_rate', type=int, default=0, choices=[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
+    parser.add_argument('--mon_rate', type=int, default=0, choices=MON_RATE)
     parser.add_argument('--testset', type=int, default=-1,
                         choices=[-1, 0, 1, 2, 3, 4],
                         help='Test set, (default 0)')
@@ -47,7 +48,7 @@ def main():
     args = get_args()
     dataset_name = args.dataset
     if args.mon_rate == 0:
-        mon_rate = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+        mon_rate = MON_RATE
     else:
         mon_rate = [args.mon_rate]
 

@@ -2,7 +2,6 @@ import argparse
 
 ADJ_CHOICES = ['scalap', 'normlap', 'symnadj', 'transition', 'identity']
 
-
 def get_args():
     # create argument parser
     parser = argparse.ArgumentParser()
