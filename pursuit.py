@@ -179,7 +179,7 @@ class Solver_l0(Solver):
         if len(Y.shape) == 1:
             self.data = np.array([Y])
         elif len(Y.shape) == 2:
-            self.data = Y
+            self.data = np.copy(Y)
         else:
             raise ValueError("Input must be a vector or a matrix.")
 
@@ -188,10 +188,8 @@ class Solver_l0(Solver):
         if not n == data_n:
             raise ValueError("Dimension mismatch: %s != %s" % (n, data_n))
 
-        for y in self.data.T:
-            # temporary values
-            coeffs = self.sparse_coding(y.T)
-            self.alphas.append(coeffs)
+        coeffs = self.sparse_coding(self.data.T)
+        self.alphas = coeffs
         return np.transpose(self.alphas)
 
     def sparse_coding(self, Y: np.ndarray):
