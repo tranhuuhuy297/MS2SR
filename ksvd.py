@@ -8,7 +8,7 @@ from pursuit import Pursuit
 from sklearn.decomposition import SparseCoder
 logging.basicConfig(level=logging.INFO)
 from sklearn.decomposition import MiniBatchDictionaryLearning
-
+import os
 class KSVD:
     def __init__(self, dictionary: Dictionary, pursuit: Type[Pursuit], sparsity: int, noise_gain=None, sigma=None):
         self.dictionary = Dictionary(dictionary.matrix)
@@ -37,7 +37,7 @@ class KSVD:
         logging.info("Entering sparse coding stage...")
         coder = SparseCoder(dictionary=self.dictionary.matrix.T, transform_algorithm='lasso_lars',
                             transform_alpha=1e-10,
-                            positive_code=True, n_jobs=8, )
+                            positive_code=True, n_jobs=os.cpu_count() - 4, )
         self.alphas = coder.transform(Y)
         self.alphas = self.alphas.T
         logging.info("Sparse coding stage ended.")
