@@ -64,7 +64,8 @@ class KSVD:
         n, K = D.shape
         dict_learner = DictionaryLearning(n_components=K, transform_algorithm='lasso_lars', random_state=42,
                                           fit_algorithm='cd', dict_init=D.T, positive_code=True,
-                                          n_jobs=os.cpu_count() - 4)
+                                          n_jobs=os.cpu_count() - 4,
+                                          max_iter=10000, verbose=True)
         alphas = dict_learner.fit_transform(X.T)
 
         newdict = dict_learner.components_
