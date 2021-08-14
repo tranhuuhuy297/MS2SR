@@ -173,28 +173,37 @@ class Solver_l0(Solver):
     #                 finished = (np.linalg.norm(residual) ** 2 < n * self.tol ** 2) or i >= n / 2
     #         self.alphas.append(coeffs)
     #     return np.transpose(self.alphas)
-    def fit(self, Y):
+    def fit(self, Zt):
+        """
+        Zt = AS
+        Y: shape (1, K)
+        A: shape (K, N)
+        S: shape (N, 1)
+        """
         # analyze shape of Y
-        data_n = Y.shape[0]
-        if len(Y.shape) == 1:
-            self.data = np.array([Y])
-        elif len(Y.shape) == 2:
-            self.data = np.copy(Y)
+        if len(Zt.shape) == 1:
+            data = np.array([Zt])
+        elif len(Zt.shape) == 2:
+            data = np.copy(Zt)
         else:
             raise ValueError("Input must be a vector or a matrix.")
 
         # analyze dimensions
-        n, K = self.D.shape
-        if not n == data_n:
-            raise ValueError("Dimension mismatch: %s != %s" % (n, data_n))
+        K, N = self.D.shape
+        if not K == Zt.shape[1]:
+            raise ValueError("Dimension mismatch: %s != %s" % (K, Zt.shape[1]))
 
-        coeffs = self.sparse_coding(self.data.T)
-        self.alphas = coeffs
-        return np.transpose(self.alphas)
+        S_hat = self.sparse_coding(data.T)  # coeffs: (N, 1)
+        return S_hat
 
-    def sparse_coding(self, Y: np.ndarray):
+    def sparse_coding(self, X: np.ndarray):
+        """
+        SparseCoder: X = CD
+        X: (T, K); C: (T, N); D: (N, K)
+        return: C.T (N, T)
+        """
+        # X shape(1, k); D shape (n, k) -> S shape(1. n)
         coder = SparseCoder(dictionary=self.D.T, transform_algorithm='lasso_lars',
-                            transform_alpha=1e-10,
-                            positive_code=True, n_jobs=os.cpu_count() - 4, )
-        alphas = coder.transform(Y)
-        return alphas.T
+                            transform_alpha=1e-10, positive_code=True, n_jobs=os.cpu_count() - 4, )
+        alphas = coder.transform(X)
+        return alphas.T  # shape (N, 1)

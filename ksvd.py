@@ -59,22 +59,21 @@ class KSVD:
     #         R[:, wk] = Ri - D[:, k, None].dot(self.alphas[None, k, wk])
     #     self.dictionary = Dictionary(D)
     #
-    def dictionary_update(self, Y: np.ndarray):
+    def dictionary_update(self, X: np.ndarray):
         D = self.dictionary.matrix
         n, K = D.shape
         dict_learner = MiniBatchDictionaryLearning(n_components=K, transform_algorithm='lasso_lars', random_state=42,
-                                                   fit_algorithm='cd',
-                                                   dict_init=D.T, positive_code=True, n_jobs=6)
-        alphas = dict_learner.fit_transform(Y.T)
+                                                   fit_algorithm='cd', dict_init=D.T, positive_code=True, n_jobs=6)
+        alphas = dict_learner.fit_transform(X.T)
 
         newdict = dict_learner.inner_stats_[0]
         self.dictionary = Dictionary(newdict.T)
         self.alphas = alphas.T
 
-    def fit(self, Y: np.ndarray, iter: int):
+    def fit(self, X: np.ndarray, iter: int):
         # for i in range(iter):
         #     logging.info("Start iteration %s" % (i + 1))
         # self.sparse_coding(Y.T)
-        self.dictionary_update(Y)
+        self.dictionary_update(X)
 
         return self.dictionary, self.alphas
