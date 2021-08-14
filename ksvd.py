@@ -4,6 +4,9 @@ from typing import Type
 from dictionary import Dictionary
 from pursuit import Pursuit
 
+from sklearn.decomposition import SparseCoder
+from sklearn.decomposition import DictionaryLearning
+
 logging.basicConfig(level=logging.INFO)
 
 
@@ -24,33 +27,24 @@ class KSVD:
 
     def sparse_coding(self, Y: np.ndarray):
         logging.info("Entering sparse coding stage...")
-        if self.noise_gain and self.sigma:
-            p = self.pursuit(self.dictionary, tol=(self.noise_gain * self.sigma))
-        else:
-            p = self.pursuit(self.dictionary, sparsity=self.sparsity)
-        self.alphas = p.fit(Y)
+        sparse = SparseCoder(dictionary=self.dictionary.matrix, transform_algorithm='lasso_lars',
+                            positive_code=True)
+        self.alphas = sparse.transform(Y)
+        self.alphas = self.alphas.T
         logging.info("Sparse coding stage ended.")
 
     def dictionary_update(self, Y: np.ndarray):
-        # iterate rows
         D = self.dictionary.matrix
         n, K = D.shape
-        R = Y - D.dot(self.alphas)
-        for k in range(K):
-            logging.info("Updating column %s" % k)
-            wk = np.nonzero(self.alphas[k, :])[0]
-            if len(wk) == 0:
-                continue
-            Ri = R[:, wk] + D[:, k, None].dot(self.alphas[None, k, wk])
-            U, s, Vh = np.linalg.svd(Ri)
-            D[:, k] = U[:, 0]
-            self.alphas[k, wk] = s[0] * Vh[0, :]
-            R[:, wk] = Ri - D[:, k, None].dot(self.alphas[None, k, wk])
-        self.dictionary = Dictionary(D)
+        dict_learner = DictionaryLearning(n_components=K, transform_algorithm='lasso_lars', random_state=42,
+                                          fit_algorithm='cd', dict_init=D, positive_code=True,
+                                          max_iter=1000, verbose=True)
+        alphas = dict_learner.fit_transform(Y.T)
+
+        newdict = dict_learner.components_
+        self.dictionary = Dictionary(newdict.T)
+        self.alphas = alphas.T
 
     def fit(self, Y: np.ndarray, iter: int):
-        for i in range(iter):
-            logging.info("Start iteration %s" % (i + 1))
-            self.sparse_coding(Y)
-            self.dictionary_update(Y)
+        self.dictionary_update(Y)
         return self.dictionary, self.alphas
