@@ -144,7 +144,8 @@ class Solver_l0(Solver):
 
         sparse = SparseCoder(dictionary=self.D, transform_algorithm='lasso_lars', positive_code=True)
 
-        print(self.data.shape)
+        # print(self.data.shape) # (14, 1)
+        print(self.D.shape)
 
         alphas = sparse.transform(self.data.T)
 
