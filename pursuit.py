@@ -142,10 +142,10 @@ class Solver_l0(Solver):
         if not n == data_n:
             raise ValueError("Dimension mismatch: %s != %s" % (n, data_n))
 
-        sparse = SparseCoder(dictionary=self.D, transform_algorithm='lasso_lars', positive_code=True)
+        sparse = SparseCoder(dictionary=self.D.T, transform_algorithm='lasso_lars', positive_code=True)
 
         # print(self.data.shape) # (14, 1)
-        print(self.D.shape)
+        # print(self.D.shape)
 
         alphas = sparse.transform(self.data.T)
 
