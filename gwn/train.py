@@ -24,7 +24,7 @@ warnings.filterwarnings("ignore", category=UserWarning)
 def get_psi(args, samples=4000):
     X = utils.load_raw(args)
 
-    X = X[:samples]
+    X = X[-samples:]
 
     X_temp = np.array([np.max(X[args.seq_len_x + i:
                                 args.seq_len_x + i + args.seq_len_y], axis=0) for i in
