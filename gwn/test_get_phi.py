@@ -18,7 +18,7 @@ seq_len_y = 12
 mon_rate = 1
 
 
-def get_psi(X, samples=40):
+def get_psi(X, samples=4000):
     X = X[:samples]
     X_temp = np.array([np.max(X[seq_len_x + i:
                                 seq_len_x + i + seq_len_y], axis=0) for i in

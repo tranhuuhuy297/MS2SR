@@ -21,7 +21,7 @@ warnings.simplefilter("ignore")
 warnings.filterwarnings("ignore", category=UserWarning)
 
 
-def get_psi(args, samples=40, iterator=100):
+def get_psi(args, samples=4000):
     X = utils.load_raw(args)
 
     X = X[:samples]
@@ -180,8 +180,6 @@ def main(args, **model_kwargs):
         if not os.path.isfile(psi_save_path):
             print('|--- Calculating psi, phi')
             psiT, ST = get_psi(args)
-            print('Psi: ', psiT.shape)
-            print('Phi: ', phi.shape)
             obj = {
                 'psiT': psiT,
                 'ST': ST
@@ -198,7 +196,7 @@ def main(args, **model_kwargs):
             psiT = obj['psiT']
 
         phi = get_phi(topk_index, total_series)
-        print('psiT: ', psiT.matrix.shape)
+        print('psiT: ', psiT.shape)
         print('phi: ', phi.shape)
 
         # traffic reconstruction using compressive sensing
