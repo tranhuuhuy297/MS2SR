@@ -200,13 +200,13 @@ def main(args, **model_kwargs):
         ShatT = sparse_coding(ZT=yhat, phiT=phi.T, psiT=psiT)
         y_cs = np.dot(ShatT, psiT)
         y_cs = np.expand_dims(y_cs, axis=1)  # shape(n, 1, N_F)
+        y_cs[:, 0, top_k_index] = yhat
 
     else:
         print('|--- No traffic reconstruction')
         y_cs = np.zeros(shape=(ygt_shape[0], 1, ygt_shape[-1]))
         y_cs[:, :, top_k_index] = yhat
 
-    y_cs[:, 0, top_k_index] = yhat
     x_gt = torch.from_numpy(x_gt).to(args.device)
     y_gt = torch.from_numpy(y_gt).to(args.device)
     y_cs = torch.from_numpy(y_cs).to(args.device)
