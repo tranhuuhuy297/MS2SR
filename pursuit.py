@@ -108,102 +108,42 @@ class ThresholdingPursuit(Pursuit):
         return gammas.T
 
 
-class Solver:
+def sparse_coding(ZT, phiT, psiT):
+    """
+    As SparseCoding: X = Code*Dict | As in the paper: Zt = phi*psi*S
+    X:(n, N_F); Code:(n, N_C); Dict:(N_C, N_F)
+    --> Z.T = S.T * psi.T * phi.T
+    Z.T:(n, k); S.T:(n, N_C) | psi.T:(N_C, N_F)=Dict, phi.T:(N_F, k)
+    k: number of topk flows
+    N_C=N_F: total number of flows
+    n: total number timesteps/samples
 
-    def __init__(self, A, max_iter=False, tol=None, sparsity=None):
-        self.D = A
-        self.max_iter = max_iter
-        self.tol = tol
-        self.sparsity = sparsity
-        if (self.tol is None and self.sparsity is None) or (self.tol is not None and self.sparsity is not None):
-            raise ValueError("blub")
-        self.data = None
-        self.alphas = []
+    ------
+    Input:
+    - ZT:(n, k)
+    - phiT:(N_F, k)
+    - psiT: (N_C, N_F)
+    return:
+    - Shat:(n, N_C)
+    """
+    # analyze shape of Y
+    if len(ZT.shape) == 1:
+        data = np.array([ZT])
+    elif len(ZT.shape) == 2:
+        data = np.copy(ZT)
+    else:
+        raise ValueError("Input must be a vector or a matrix.")
 
-    def fit(self, Y):
-        return [], self.alphas
+    # analyze dimensions
+    N_C, N_F = psiT.shape
+    assert N_C == N_F
+    k = phiT.shape[1]
+    A = np.dot(psiT, phiT)  # shape (N_C, k)
+    assert k == ZT.shape[1]
 
+    coder = SparseCoder(dictionary=A, transform_algorithm='lasso_lars',
+                        transform_alpha=1e-10, positive_code=True, n_jobs=os.cpu_count(),
+                        transform_max_iter=10000)
 
-class Solver_l0(Solver):
-
-    # def fit(self, Y):
-    #     # analyze shape of Y
-    #     data_n = Y.shape[0]
-    #     if len(Y.shape) == 1:
-    #         self.data = np.array([Y])
-    #     elif len(Y.shape) == 2:
-    #         self.data = Y
-    #     else:
-    #         raise ValueError("Input must be a vector or a matrix.")
-    #
-    #     # analyze dimensions
-    #     n, K = self.D.shape
-    #     if not n == data_n:
-    #         raise ValueError("Dimension mismatch: %s != %s" % (n, data_n))
-    #
-    #     for y in self.data.T:
-    #         # temporary values
-    #         coeffs = np.zeros(K)
-    #         residual = y
-    #
-    #         # iterate
-    #         i = 0
-    #         if self.max_iter:
-    #             m = self.max_iter
-    #         else:
-    #             m = np.inf
-    #
-    #         finished = False
-    #
-    #         while not finished:
-    #             if i >= m:
-    #                 break
-    #             inner = np.dot(self.D.T, residual)
-    #             gamma = int(np.argmax(np.abs(inner)))
-    #             alpha = inner[gamma]
-    #             residual = residual - alpha * self.D[:, gamma]
-    #             if np.isclose(alpha, 0):
-    #                 break
-    #             coeffs[gamma] += alpha
-    #             coeffs[coeffs < 0.0] = 0.0
-    #             i += 1
-    #             if self.sparsity:
-    #                 finished = np.count_nonzero(coeffs) >= self.sparsity
-    #             else:
-    #                 finished = (np.linalg.norm(residual) ** 2 < n * self.tol ** 2) or i >= n / 2
-    #         self.alphas.append(coeffs)
-    #     return np.transpose(self.alphas)
-    def fit(self, Zt):
-        """
-        Zt = AS
-        Y: shape (1, K)
-        A: shape (K, N)
-        S: shape (N, 1)
-        """
-        # analyze shape of Y
-        if len(Zt.shape) == 1:
-            data = np.array([Zt])
-        elif len(Zt.shape) == 2:
-            data = np.copy(Zt)
-        else:
-            raise ValueError("Input must be a vector or a matrix.")
-
-        # analyze dimensions
-        K, N = self.D.shape
-        if not K == Zt.shape[1]:
-            raise ValueError("Dimension mismatch: %s != %s" % (K, Zt.shape[1]))
-
-        S_hat = self.sparse_coding(data.T)  # coeffs: (N, 1)
-        return S_hat
-
-    def sparse_coding(self, X: np.ndarray):
-        """
-        SparseCoder: X = CD
-        X: (T, K); C: (T, N); D: (N, K)
-        return: C.T (N, T)
-        """
-        # X shape(1, k); D shape (n, k) -> S shape(1. n)
-        coder = SparseCoder(dictionary=self.D.T, transform_algorithm='lasso_lars',
-                            transform_alpha=1e-10, positive_code=True, n_jobs=os.cpu_count() - 4, )
-        alphas = coder.transform(X)
-        return alphas.T  # shape (N, 1)
+    Shat = coder.transform(ZT)
+    return Shat  # shape(n, N_C)

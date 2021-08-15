@@ -11,7 +11,7 @@ from tqdm import trange
 from routing import *
 from dictionary import DCTDictionary
 from ksvd import KSVD
-from pursuit import MatchingPursuit, Solver_l0
+from pursuit import MatchingPursuit, sparse_coding
 import pickle
 import warnings
 
@@ -34,8 +34,8 @@ def get_psi(args, samples=4000, iterator=100):
 
     D = DCTDictionary(size_D, size_D)
 
-    psi, alpha = KSVD(D, MatchingPursuit, int(args.mon_rate / 100 * X.shape[1])).fit(X_temp, iterator)
-    return psi, alpha
+    psiT, ST = KSVD(D, MatchingPursuit, int(args.mon_rate / 100 * X.shape[1])).fit(X_temp)
+    return psiT, ST
 
 
 def get_phi(top_k_index, nseries):
@@ -169,8 +169,6 @@ def main(args, **model_kwargs):
     ygt_shape = y_gt.shape
     if args.cs:
         print('|--- Traffic reconstruction using CS')
-        y_cs = np.zeros(shape=(ygt_shape[0], 1, ygt_shape[-1]))
-
         # obtain psi, G, R
         psi_save_path = os.path.join(args.datapath, 'cs/saved_psi/')
         if not os.path.exists(psi_save_path):
@@ -181,13 +179,13 @@ def main(args, **model_kwargs):
                                                                                  args.seq_len_y))
         if not os.path.isfile(psi_save_path):
             print('|--- Calculating psi, phi')
-            psi, alpha = get_psi(args)
+            psiT, ST = get_psi(args)
             phi = get_phi(topk_index, total_series)
-            print('Psi: ', psi.shape)
+            print('Psi: ', psiT.shape)
             print('Phi: ', phi.shape)
             obj = {
-                'psi': psi,
-                'alpha': alpha
+                'psiT': psiT,
+                'ST': ST
             }
             with open(psi_save_path, 'wb') as fp:
                 pickle.dump(obj, fp, protocol=pickle.HIGHEST_PROTOCOL)
@@ -198,17 +196,21 @@ def main(args, **model_kwargs):
             with open(psi_save_path, 'rb') as fp:
                 obj = pickle.load(fp)
                 fp.close()
-            psi = obj['psi']
+            psiT = obj['psiT']
             phi = get_phi(topk_index, total_series)
 
-            print('psi: ', psi.matrix.shape)
-            print('phi: ', phi.shape)
+        print('psiT: ', psiT.matrix.shape)
+        print('phi: ', phi.shape)
 
         # traffic reconstruction using compressive sensing
-        for i in range(y_cs.shape[0]):
-            A = np.dot(phi[i], psi.matrix)
-            sparse = Solver_l0(A, max_iter=100, sparsity=int(args.mon_rate / 100 * y_cs.shape[-1])).fit(yhat[i].T)
-            y_cs[i] = np.dot(psi.matrix, sparse).T
+        # for i in range(y_cs.shape[0]):
+        #     A = np.dot(phi[i], psi.matrix)
+        #     sparse = Solver_l0(A, max_iter=100, sparsity=int(args.mon_rate / 100 * y_cs.shape[-1])).fit(yhat[i].T)
+        #     y_cs[i] = np.dot(psi.matrix, sparse).T
+
+        yhat = np.squeeze(yhat, axis=1)  # shape(n, k)
+        y_cs = sparse_coding(ZT=yhat, phiT=phi.T, psiT=psiT)
+        y_cs = np.expand_dims(y_cs, axis=1)  # shape(n, 1, N_F)
 
     else:
         print('|--- No traffic reconstruction')

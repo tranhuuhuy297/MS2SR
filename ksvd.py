@@ -10,9 +10,10 @@ logging.basicConfig(level=logging.INFO)
 from sklearn.decomposition import DictionaryLearning
 import os
 class KSVD:
-    def __init__(self, dictionary: Dictionary, pursuit: Type[Pursuit], sparsity: int, noise_gain=None, sigma=None):
+    def __init__(self, dictionary: Dictionary, pursuit: Type[Pursuit], sparsity: int, noise_gain=None, sigma=None,
+                 verbose=False):
         self.dictionary = Dictionary(dictionary.matrix)
-        self.alphas = None
+        self.code = None
         self.pursuit = pursuit
         self.sparsity = sparsity
         self.noise_gain = noise_gain
@@ -23,6 +24,7 @@ class KSVD:
         self.ssims = []
         self.psnrs = []
         self.iter = None
+        self.verbose = verbose
 
     # def sparse_coding(self, Y: np.ndarray):
     #     logging.info("Entering sparse coding stage...")
@@ -32,15 +34,6 @@ class KSVD:
     #         p = self.pursuit(dictionary=self.dictionary, sparsity=self.sparsity)
     #     self.alphas = p.fit(Y)
     #     logging.info("Sparse coding stage ended.")
-
-    def sparse_coding(self, Y: np.ndarray):
-        logging.info("Entering sparse coding stage...")
-        coder = SparseCoder(dictionary=self.dictionary.matrix.T, transform_algorithm='lasso_lars',
-                            transform_alpha=1e-10,
-                            positive_code=True, n_jobs=os.cpu_count() - 4, )
-        self.alphas = coder.transform(Y)
-        self.alphas = self.alphas.T
-        logging.info("Sparse coding stage ended.")
 
     # def dictionary_update(self, Y: np.ndarray):
     #     # iterate rows
@@ -59,27 +52,23 @@ class KSVD:
     #         R[:, wk] = Ri - D[:, k, None].dot(self.alphas[None, k, wk])
     #     self.dictionary = Dictionary(D)
     #
-    def dictionary_update(self, X: np.ndarray):
+    def fit(self, X: np.ndarray):
+        """
+        X: shape (n, N_F)
+        dictionary: shape (N_C, N_F)
+        ----
+        X: (n, N_F)
+        SparseCoding: X(n, N_F) = Code(T, N_C)*Dict(N_C, N_F)
+        In the paper: X(N_F, n) = psi(N_F, N_C)*S(N_C, n)
+        --> self.dictionary = Dict(N_C, N_F) = (psi).T
+        --> self.code = Code = (S)^T
+        """
         D = self.dictionary.matrix
-        n, K = D.shape
-        dict_learner = DictionaryLearning(n_components=K, transform_algorithm='lasso_lars', random_state=42,
-                                          fit_algorithm='cd', dict_init=D.T, positive_code=True,
+        N_C, N_F = D.shape
+        dict_learner = DictionaryLearning(n_components=N_C, transform_algorithm='lasso_lars', random_state=42,
+                                          fit_algorithm='cd', dict_init=D, positive_code=True,
                                           n_jobs=os.cpu_count() - 4,
-                                          max_iter=10000, verbose=True)
-        alphas = dict_learner.fit_transform(X.T)
-
-        newdict = dict_learner.components_
-        self.dictionary = Dictionary(newdict.T)
-        self.alphas = alphas.T
-
-    def fit(self, X: np.ndarray, iter: int):
-        # for i in range(iter):
-        #     logging.info("Start iteration %s" % (i + 1))
-        #     # self.sparse_coding(X.T)
-        #     self.dictionary_update(X)
-        # for i in range(iter):
-        #     logging.info("Start iteration %s" % (i + 1))
-        #     self.sparse_coding(X.T)
-
-        self.dictionary_update(X)
-        return self.dictionary, self.alphas
+                                          max_iter=10000, verbose=self.verbose)
+        self.code = dict_learner.fit_transform(X)
+        self.dictionary = Dictionary(dict_learner.components_)
+        return self.dictionary, self.code
