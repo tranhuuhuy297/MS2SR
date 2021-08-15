@@ -197,7 +197,7 @@ def main(args, **model_kwargs):
         phi = get_phi(topk_index, total_series)
         print('psiT: ', psiT.shape)
         print('phi: ', phi.shape)
-        y_cs = np.zeros(shape=(ygt_shape[0], 1, ygt_shape[1]))
+        y_cs = np.zeros(shape=(ygt_shape[0], 1, total_series))
         # traffic reconstruction using compressive sensing
         for i in range(y_cs.shape[0]):
             # yhat[i]:(1, k) | phi[i].T:(N_F, k), psiT:(N_C, N_F)
