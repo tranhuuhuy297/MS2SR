@@ -144,7 +144,7 @@ def sparse_coding(ZT, phiT, psiT):
 
     coder = SparseCoder(dictionary=A, transform_algorithm='lasso_lars',
                         transform_alpha=1e-10, positive_code=True, n_jobs=os.cpu_count(),
-                        transform_max_iter=10000)
+                        transform_max_iter=1000)
 
     Shat = coder.transform(ZT)
     return Shat  # shape(n, N_C)
