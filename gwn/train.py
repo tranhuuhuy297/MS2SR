@@ -197,7 +197,8 @@ def main(args, **model_kwargs):
         print('phi: ', phi.shape)
 
         yhat = np.squeeze(yhat, axis=1)  # shape(n, k)
-        y_cs = sparse_coding(ZT=yhat, phiT=phi.T, psiT=psiT)
+        ShatT = sparse_coding(ZT=yhat, phiT=phi.T, psiT=psiT)
+        y_cs = np.dot(ShatT, psiT)
         y_cs = np.expand_dims(y_cs, axis=1)  # shape(n, 1, N_F)
 
     else:
