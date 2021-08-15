@@ -35,6 +35,7 @@ class KSVD:
         # iterate rows
         D = self.dictionary.matrix
         n, K = D.shape
+        print('Dictionary shape: {}'.format(D.shape))
         R = Y - D.dot(self.alphas)
         for k in range(K):
             logging.info("Updating column %s" % k)
