@@ -19,12 +19,13 @@ mon_rate = 1
 
 
 def get_psi(X, samples=40):
+    X = X[:samples]
     X_temp = np.array([np.max(X[seq_len_x + i:
                                 seq_len_x + i + seq_len_y], axis=0) for i in
-                       range(samples - seq_len_x - seq_len_y)]).T
+                       range(samples - seq_len_x - seq_len_y)])
 
     N = X.shape[1]
-    D = DCTDictionary(N, N)
+    D = np.zeros(shape=(N, N))
 
     psiT, ST = KSVD(D, MatchingPursuit, sparsity=int(mon_rate / 100 * X.shape[1])).fit(X_temp)
     return psiT, ST

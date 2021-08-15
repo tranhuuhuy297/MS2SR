@@ -14,7 +14,7 @@ class Pursuit:
     """
 
     def __init__(self, dictionary, max_iter=False, tol=None, sparsity=None):
-        self.D = np.array(dictionary.matrix)
+        self.D = dictionary
         self.max_iter = max_iter
         self.tol = tol
         self.sparsity = sparsity

@@ -10,9 +10,9 @@ logging.basicConfig(level=logging.INFO)
 from sklearn.decomposition import DictionaryLearning
 import os
 class KSVD:
-    def __init__(self, dictionary: Dictionary, pursuit: Type[Pursuit], sparsity: int, noise_gain=None, sigma=None,
+    def __init__(self, dictionary: np.ndarray, pursuit: Type[Pursuit], sparsity: int, noise_gain=None, sigma=None,
                  verbose=False):
-        self.dictionary = Dictionary(dictionary.matrix)
+        self.dictionary = dictionary
         self.code = None
         self.pursuit = pursuit
         self.sparsity = sparsity
@@ -63,12 +63,16 @@ class KSVD:
         --> self.dictionary = Dict(N_C, N_F) = (psi).T
         --> self.code = Code = (S)^T
         """
-        D = self.dictionary.matrix
+        n, F = X.shape
+        D = self.dictionary
         N_C, N_F = D.shape
+        assert N_C == N_F
+        assert F == N_F
+        init_code = np.zeros(shape=(X.shape[1], N_F))
         dict_learner = DictionaryLearning(n_components=N_C, transform_algorithm='lasso_lars', random_state=42,
-                                          fit_algorithm='cd', dict_init=D, positive_code=True,
+                                          fit_algorithm='cd', dict_init=D, positive_code=True, code_init=init_code,
                                           n_jobs=os.cpu_count() - 4,
-                                          max_iter=1000, verbose=self.verbose)
+                                          max_iter=10, verbose=self.verbose)
         self.code = dict_learner.fit_transform(X)
-        self.dictionary = Dictionary(dict_learner.components_)
+        self.dictionary = np.array(dict_learner.components_)
         return self.dictionary, self.code
