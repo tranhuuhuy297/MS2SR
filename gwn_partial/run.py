@@ -38,6 +38,7 @@ def get_args():
                         help='Test set, (default 0)')
     parser.add_argument('--nrun', type=int, default=30)
     parser.add_argument('--timeout', type=float, default=1.0)
+    parser.add_argument('--cs', type=int, default=1, choices=[0, 1, 2])
 
     args = parser.parse_args()
     return args
@@ -53,7 +54,10 @@ def main():
         mon_rate = [args.mon_rate]
 
     if args.test:
-        CS = [0, 1]
+        if args.cs == 2:
+            CS = [0, 1]
+        else:
+            CS = [args.cs]
         if args.testset == -1:
             testset = [0, 1, 2, 3, 4]
         else:
