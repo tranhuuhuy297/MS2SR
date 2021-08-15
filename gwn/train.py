@@ -170,10 +170,9 @@ def main(args, **model_kwargs):
         psi_save_path = os.path.join(args.datapath, 'cs/saved_psi/')
         if not os.path.exists(psi_save_path):
             os.makedirs(psi_save_path)
-        psi_save_path = os.path.join(psi_save_path, '{}_{}_{}_{}_psi.pkl'.format(args.dataset,
-                                                                                 args.mon_rate,
-                                                                                 args.seq_len_x,
-                                                                                 args.seq_len_y))
+        psi_save_path = os.path.join(psi_save_path, '{}_{}_{}_psi.pkl'.format(args.dataset,
+                                                                              args.seq_len_x,
+                                                                              args.seq_len_y))
         if not os.path.isfile(psi_save_path):
             print('|--- Calculating psi, phi')
 

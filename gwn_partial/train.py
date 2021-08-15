@@ -173,10 +173,9 @@ def main(args, **model_kwargs):
         psi_save_path = os.path.join(args.datapath, 'cs/saved_psi/')
         if not os.path.exists(psi_save_path):
             os.makedirs(psi_save_path)
-        psi_save_path = os.path.join(psi_save_path, '{}_{}_{}_{}_psi.pkl'.format(args.dataset,
-                                                                                 args.mon_rate,
-                                                                                 args.seq_len_x,
-                                                                                 args.seq_len_y))
+        psi_save_path = os.path.join(psi_save_path, '{}_{}_{}_psi.pkl'.format(args.dataset,
+                                                                              args.seq_len_x,
+                                                                              args.seq_len_y))
         if not os.path.isfile(psi_save_path):
             print('|--- Calculating psi, phi')
             psiT, ST = get_psi(args)
@@ -212,6 +211,8 @@ def main(args, **model_kwargs):
     else:
         print('|--- No traffic reconstruction')
         y_cs = np.zeros(shape=(ygt_shape[0], 1, ygt_shape[-1]))
+        for i in range(ygt_shape[0]):
+            y_cs[:, :, topk_index[i]] = yhat[i]
 
     x_gt = torch.from_numpy(x_gt).to(args.device)
     y_gt = torch.from_numpy(y_gt).to(args.device)
