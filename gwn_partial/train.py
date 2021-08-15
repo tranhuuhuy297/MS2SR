@@ -21,7 +21,7 @@ warnings.simplefilter("ignore")
 warnings.filterwarnings("ignore", category=UserWarning)
 
 
-def get_psi(args, samples=4000, iterator=100):
+def get_psi(args, samples=40, iterator=100):
     X = utils.load_raw(args)
 
     X = X[:samples]
