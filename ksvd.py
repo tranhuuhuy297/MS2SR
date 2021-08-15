@@ -68,7 +68,7 @@ class KSVD:
         dict_learner = DictionaryLearning(n_components=N_C, transform_algorithm='lasso_lars', random_state=42,
                                           fit_algorithm='cd', dict_init=D, positive_code=True,
                                           n_jobs=os.cpu_count() - 4,
-                                          max_iter=10000, verbose=self.verbose)
+                                          max_iter=1000, verbose=self.verbose)
         self.code = dict_learner.fit_transform(X)
         self.dictionary = Dictionary(dict_learner.components_)
         return self.dictionary, self.code
