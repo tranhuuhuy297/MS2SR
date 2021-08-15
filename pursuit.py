@@ -1,16 +1,13 @@
 import numpy as np
 from sklearn.linear_model import orthogonal_mp
-from sklearn.decomposition import SparseCoder
+
 
 class Pursuit:
     """
     Algorithms that inherit from this class are methods to solve problems of the like
-
     \min_A \| DA - Y \|_2 s.t. \|A\|_0 <= t.
-
     Here, D is a given dictionary of size (n x K)
     Y is a given matrix of size (n x N), where N is the number of samples
-
     The Pursuit will return a matrix A of size (K x N).
     """
 
@@ -72,7 +69,7 @@ class MatchingPursuit(Pursuit):
                 if np.isclose(alpha, 0):
                     break
                 coeffs[gamma] += alpha
-                # coeffs[coeffs < 0] = 0
+                coeffs[coeffs < 0] = 0
                 i += 1
                 if self.sparsity:
                     finished = np.count_nonzero(coeffs) >= self.sparsity
@@ -142,11 +139,36 @@ class Solver_l0(Solver):
         if not n == data_n:
             raise ValueError("Dimension mismatch: %s != %s" % (n, data_n))
 
-        sparse = SparseCoder(dictionary=self.D.T, transform_algorithm='lasso_lars', positive_code=True)
+        for y in self.data.T:
+            # temporary values
+            coeffs = np.zeros(K)
+            residual = y
 
-        # print(self.data.shape) # (14, 1)
-        # print(self.D.shape)
+            # iterate
+            i = 0
+            if self.max_iter:
+                m = self.max_iter
+            else:
+                m = np.inf
 
-        alphas = sparse.transform(self.data.T)
+            finished = False
 
+            while not finished:
+                if i >= m:
+                    break
+                inner = np.dot(self.D.T, residual)
+                gamma = int(np.argmax(np.abs(inner)))
+                alpha = inner[gamma]
+                residual = residual - alpha * self.D[:, gamma]
+                if np.isclose(alpha, 0):
+                    break
+                coeffs[gamma] += alpha
+                coeffs[coeffs < 0] = 0
+                i += 1
+                if self.sparsity:
+                    finished = np.count_nonzero(coeffs) >= self.sparsity
+#                     finished = np.sum(coeffs >= 0) >= self.sparsity
+                else:
+                    finished = (np.linalg.norm(residual) ** 2 < n * self.tol ** 2) or i >= n / 2
+            self.alphas.append(coeffs)
         return np.transpose(self.alphas)
