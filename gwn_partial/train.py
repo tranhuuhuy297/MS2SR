@@ -197,17 +197,16 @@ def main(args, **model_kwargs):
         phi = get_phi(topk_index, total_series)
         print('psiT: ', psiT.shape)
         print('phi: ', phi.shape)
-
+        y_cs = np.zeros(shape=(ygt_shape[0], 1, ygt_shape[1]))
         # traffic reconstruction using compressive sensing
-        # for i in range(y_cs.shape[0]):
-        #     A = np.dot(phi[i], psi.matrix)
-        #     sparse = Solver_l0(A, max_iter=100, sparsity=int(args.mon_rate / 100 * y_cs.shape[-1])).fit(yhat[i].T)
-        #     y_cs[i] = np.dot(psi.matrix, sparse).T
+        for i in range(y_cs.shape[0]):
+            sparse = sparse_coding(ZT=yhat[i], phiT=phi[i].T, psiT=psiT)
+            y_cs[i] = np.dot(psi.matrix, sparse).T
 
-        yhat = np.squeeze(yhat, axis=1)  # shape(n, k)
-        ShatT = sparse_coding(ZT=yhat, phiT=phi.T, psiT=psiT)
-        y_cs = np.dot(ShatT, psiT)
-        y_cs = np.expand_dims(y_cs, axis=1)  # shape(n, 1, N_F)
+        # yhat = np.squeeze(yhat, axis=1)  # shape(n, k)
+        # ShatT = sparse_coding(ZT=yhat, phiT=phi.T, psiT=psiT)
+        # y_cs = np.dot(ShatT, psiT)
+        # y_cs = np.expand_dims(y_cs, axis=1)  # shape(n, 1, N_F)
 
     else:
         print('|--- No traffic reconstruction')
