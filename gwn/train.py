@@ -199,8 +199,8 @@ def main(args, **model_kwargs):
         yhat = np.squeeze(yhat, axis=1)  # shape(n, k)
         ShatT = sparse_coding(ZT=yhat, phiT=phi.T, psiT=psiT)
         y_cs = np.dot(ShatT, psiT)
+        y_cs[:, top_k_index] = yhat
         y_cs = np.expand_dims(y_cs, axis=1)  # shape(n, 1, N_F)
-        y_cs[:, 0, top_k_index] = yhat
 
     else:
         print('|--- No traffic reconstruction')
