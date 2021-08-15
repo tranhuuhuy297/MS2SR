@@ -136,6 +136,7 @@ def sparse_coding(ZT, phiT, psiT):
 
     # analyze dimensions
     N_C, N_F = psiT.shape
+    print(psiT.shape)
     assert N_C == N_F
     k = phiT.shape[1]
     A = np.dot(psiT, phiT)  # shape (N_C, k)
