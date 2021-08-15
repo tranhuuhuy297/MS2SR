@@ -11,7 +11,7 @@ from tqdm import trange
 from routing import *
 from dictionary import DCTDictionary
 from ksvd import KSVD
-from pursuit import MatchingPursuit, Solver_l0
+from pursuit import MatchingPursuit, sparse_coding
 import pickle
 import warnings
 
@@ -21,7 +21,7 @@ warnings.simplefilter("ignore")
 warnings.filterwarnings("ignore", category=UserWarning)
 
 
-def get_psi(args, samples=4000, iterator=100):
+def get_psi(args, samples=40):
     X = utils.load_raw(args)
 
     X = X[:samples]
@@ -34,8 +34,8 @@ def get_psi(args, samples=4000, iterator=100):
 
     D = DCTDictionary(size_D, size_D)
 
-    psi, alpha = KSVD(D, MatchingPursuit, sparsity=int(args.mon_rate / 100 * X.shape[1])).fit(X_temp, iterator)
-    return psi, alpha
+    psiT, ST = KSVD(D, MatchingPursuit, sparsity=int(args.mon_rate / 100 * X.shape[1])).fit(X_temp)
+    return psiT, ST
 
 
 def get_phi(top_k_index, nseries):
@@ -166,7 +166,6 @@ def main(args, **model_kwargs):
     ygt_shape = y_gt.shape
     if args.cs:
         print('|--- Traffic reconstruction using CS')
-        y_cs = np.zeros(shape=(ygt_shape[0], 1, ygt_shape[-1]))
 
         # obtain psi, G, R
         psi_save_path = os.path.join(args.datapath, 'cs/saved_psi/')
@@ -179,10 +178,10 @@ def main(args, **model_kwargs):
         if not os.path.isfile(psi_save_path):
             print('|--- Calculating psi, phi')
 
-            psi, alpha = get_psi(args)
+            psiT, ST = get_psi(args)
             obj = {
-                'psi': psi,
-                'alpha': alpha
+                'psiT': psiT,
+                'ST': ST
             }
             with open(psi_save_path, 'wb') as fp:
                 pickle.dump(obj, fp, protocol=pickle.HIGHEST_PROTOCOL)
@@ -193,80 +192,28 @@ def main(args, **model_kwargs):
             with open(psi_save_path, 'rb') as fp:
                 obj = pickle.load(fp)
                 fp.close()
-            psi = obj['psi']
-            alpha = obj['alpha']
+            psiT = obj['psiT']
 
         phi = get_phi(top_k_index, total_series)
+        print('psiT: ', psiT.matrix.shape)
+        print('phi: ', phi.shape)
 
-        # traffic reconstruction using compressive sensing
-        A = np.dot(phi, psi.matrix)
-        for i in range(y_cs.shape[0]):  # yhat[i] shape(1, k)
-            Shat = Solver_l0(A, max_iter=100, sparsity=int(args.mon_rate / 100 * y_cs.shape[-1])).fit(yhat[i])
-            # Shat: (N, 1), psi: (N, N) -> y_cs[i] = (psi x Shat)T : (1, N)
-            y_cs[i] = np.dot(psi.matrix, Shat).T
-
-
+        yhat = np.squeeze(yhat, axis=1)  # shape(n, k)
+        y_cs = sparse_coding(ZT=yhat, phiT=phi.T, psiT=psiT)
+        y_cs = np.expand_dims(y_cs, axis=1)  # shape(n, 1, N_F)
 
     else:
         print('|--- No traffic reconstruction')
         y_cs = np.zeros(shape=(ygt_shape[0], 1, ygt_shape[-1]))
         y_cs[:, :, top_k_index] = yhat
 
-    y_cs[:, :, top_k_index] = yhat
     x_gt = torch.from_numpy(x_gt).to(args.device)
     y_gt = torch.from_numpy(y_gt).to(args.device)
     y_cs = torch.from_numpy(y_cs).to(args.device)
     y_cs[y_cs <= 0.0] = 0.0
 
-    test_met = []
-    for i in range(y_cs.shape[1]):
-        pred = y_cs[:, i, :]
-        real = y_real[:, i, :]
-        test_met.append([x.item() for x in utils.calc_metrics(pred, real)])
-    test_met_df = pd.DataFrame(test_met, columns=['rse', 'mae', 'mse', 'mape', 'rmse']).rename_axis('t')
-    test_met_df.round(6).to_csv(os.path.join(logger.log_dir, 'summarized_test_metrics_{}_cs_{}.csv'.format(args.testset,
-                                                                                                           args.cs)))
-    print('Prediction Accuracy:')
-    print(test_met_df)
-
-    # Calculate metrics per cycle
-    test_met = []
-    for t in range(y_cs.shape[0]):
-        for i in range(y_cs.shape[1]):
-            pred = y_cs[t, i, :]
-            real = y_real[t, i, :]
-            test_met.append([x.item() for x in utils.calc_metrics(pred, real)])
-    test_met_df = pd.DataFrame(test_met, columns=['rse', 'mae', 'mse', 'mape', 'rmse']).rename_axis('t')
-    test_met_df.round(6).to_csv(os.path.join(logger.log_dir, 'test_metrics_{}_cs_{}.csv'.format(args.testset, args.cs)))
-
-    # Calculate metrics for top k% flows
-
-    for tk in [1, 2, 3, 4, 5]:
-        y_real = y_real.squeeze(dim=1)
-        means = torch.mean(y_real, dim=0)
-        top_idx = torch.argsort(means, descending=True)
-        top_idx = top_idx[:int(tk * y_real.shape[1] / 100)]
-
-        ycs_1 = y_cs[:, :, top_idx]
-        y_real_1 = y_real[:, top_idx]
-
-        test_met = []
-        pred = ycs_1[:, 0, :]
-        real = y_real_1
-        test_met.append([x.item() for x in utils.calc_metrics(pred, real)])
-        test_met_df = pd.DataFrame(test_met, columns=['rse', 'mae', 'mse', 'mape', 'rmse']).rename_axis('t')
-        test_met_df.round(6).to_csv(
-            os.path.join(logger.log_dir, 'summarized_test_metrics_top1_{}_cs_{}_tk_{}.csv'.format(
-                args.testset, args.cs, tk)))
-
-        test_met = []
-        for t in range(y_cs.shape[0]):
-            pred = ycs_1[t, 0, :]
-            real = y_real_1[t, :]
-            test_met.append([x.item() for x in utils.calc_metrics(pred, real)])
-        test_met_df = pd.DataFrame(test_met, columns=['rse', 'mae', 'mse', 'mape', 'rmse']).rename_axis('t')
-        test_met_df.round(6).to_csv(os.path.join(logger.log_dir, 'test_metrics_top1_{}_cs_{}_tk_{}.csv'.format(
-            args.testset, args.cs, tk)))
+    # Calculate error
+    utils.analysing_results(y_cs, y_real, logger, args)
 
     # run traffic engineering
     x_gt = x_gt.cpu().data.numpy()  # [timestep, seq_x, seq_y]

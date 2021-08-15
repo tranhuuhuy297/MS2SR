@@ -1,5 +1,7 @@
 import numpy as np
 import torch
+import os
+import pandas as pd
 
 EPS = 1e-8
 
@@ -75,3 +77,55 @@ def mse_np(X, M, W, Wo):
     sample_mse = np.sum(W * Wo * (X - M) ** 2) / (np.sum(W * Wo) + EPS)
     infer_mse = np.sum((1 - W * Wo) * (X - M) ** 2) / (np.sum(1.0 - W * Wo) + EPS)
     return float(sample_mse), float(infer_mse)
+
+
+def analysing_results(y_cs, y_real, logger, args):
+    test_met = []
+    for i in range(y_cs.shape[1]):
+        pred = y_cs[:, i, :]
+        real = y_real[:, i, :]
+        test_met.append([x.item() for x in calc_metrics(pred, real)])
+    test_met_df = pd.DataFrame(test_met, columns=['rse', 'mae', 'mse', 'mape', 'rmse']).rename_axis('t')
+    test_met_df.round(6).to_csv(os.path.join(logger.log_dir, 'summarized_test_metrics_{}_cs_{}.csv'.format(args.testset,
+                                                                                                           args.cs)))
+    print('Prediction Accuracy:')
+    print(test_met_df)
+
+    # Calculate metrics per cycle
+    test_met = []
+    for t in range(y_cs.shape[0]):
+        for i in range(y_cs.shape[1]):
+            pred = y_cs[t, i, :]
+            real = y_real[t, i, :]
+            test_met.append([x.item() for x in calc_metrics(pred, real)])
+    test_met_df = pd.DataFrame(test_met, columns=['rse', 'mae', 'mse', 'mape', 'rmse']).rename_axis('t')
+    test_met_df.round(6).to_csv(os.path.join(logger.log_dir, 'test_metrics_{}_cs_{}.csv'.format(args.testset, args.cs)))
+
+    # Calculate metrics for top k% flows
+
+    for tk in [1, 2, 3, 4, 5]:
+        y_real = y_real.squeeze(dim=1)
+        means = torch.mean(y_real, dim=0)
+        top_idx = torch.argsort(means, descending=True)
+        top_idx = top_idx[:int(tk * y_real.shape[1] / 100)]
+
+        ycs_1 = y_cs[:, :, top_idx]
+        y_real_1 = y_real[:, top_idx]
+
+        test_met = []
+        pred = ycs_1[:, 0, :]
+        real = y_real_1
+        test_met.append([x.item() for x in calc_metrics(pred, real)])
+        test_met_df = pd.DataFrame(test_met, columns=['rse', 'mae', 'mse', 'mape', 'rmse']).rename_axis('t')
+        test_met_df.round(6).to_csv(
+            os.path.join(logger.log_dir, 'summarized_test_metrics_top1_{}_cs_{}_tk_{}.csv'.format(
+                args.testset, args.cs, tk)))
+
+        test_met = []
+        for t in range(y_cs.shape[0]):
+            pred = ycs_1[t, 0, :]
+            real = y_real_1[t, :]
+            test_met.append([x.item() for x in calc_metrics(pred, real)])
+        test_met_df = pd.DataFrame(test_met, columns=['rse', 'mae', 'mse', 'mape', 'rmse']).rename_axis('t')
+        test_met_df.round(6).to_csv(os.path.join(logger.log_dir, 'test_metrics_top1_{}_cs_{}_tk_{}.csv'.format(
+            args.testset, args.cs, tk)))

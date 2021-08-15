@@ -180,7 +180,6 @@ def main(args, **model_kwargs):
         if not os.path.isfile(psi_save_path):
             print('|--- Calculating psi, phi')
             psiT, ST = get_psi(args)
-            phi = get_phi(topk_index, total_series)
             print('Psi: ', psiT.shape)
             print('Phi: ', phi.shape)
             obj = {
@@ -197,8 +196,8 @@ def main(args, **model_kwargs):
                 obj = pickle.load(fp)
                 fp.close()
             psiT = obj['psiT']
-            phi = get_phi(topk_index, total_series)
 
+        phi = get_phi(topk_index, total_series)
         print('psiT: ', psiT.matrix.shape)
         print('phi: ', phi.shape)
 
@@ -215,9 +214,6 @@ def main(args, **model_kwargs):
     else:
         print('|--- No traffic reconstruction')
         y_cs = np.zeros(shape=(ygt_shape[0], 1, ygt_shape[-1]))
-
-    for i in range(ygt_shape[0]):
-        y_cs[i, 0, topk_index[i]] = yhat[i]
 
     x_gt = torch.from_numpy(x_gt).to(args.device)
     y_gt = torch.from_numpy(y_gt).to(args.device)
