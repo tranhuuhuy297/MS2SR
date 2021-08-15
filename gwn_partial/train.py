@@ -200,8 +200,11 @@ def main(args, **model_kwargs):
         y_cs = np.zeros(shape=(ygt_shape[0], 1, ygt_shape[1]))
         # traffic reconstruction using compressive sensing
         for i in range(y_cs.shape[0]):
-            sparse = sparse_coding(ZT=yhat[i], phiT=phi[i].T, psiT=psiT)
-            y_cs[i] = np.dot(psi.matrix, sparse).T
+            # yhat[i]:(1, k) | phi[i].T:(N_F, k), psiT:(N_C, N_F)
+            ShatT = sparse_coding(ZT=yhat[i], phiT=phi[i].T, psiT=psiT)
+            y_cs_i = np.dot(ShatT, psiT)
+            y_cs[i] = y_cs_i
+            y_cs[:, :, topk_index[i]] = yhat[i]
 
         # yhat = np.squeeze(yhat, axis=1)  # shape(n, k)
         # ShatT = sparse_coding(ZT=yhat, phiT=phi.T, psiT=psiT)
