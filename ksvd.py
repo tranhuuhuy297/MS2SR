@@ -68,7 +68,7 @@ class KSVD:
         N_C, N_F = D.shape
         assert N_C == N_F
         assert F == N_F
-        init_code = np.zeros(shape=(X.shape[1], N_F))
+        init_code = np.zeros(shape=(X.shape[0], N_F))
         dict_learner = DictionaryLearning(n_components=N_C, transform_algorithm='lasso_lars', random_state=42,
                                           fit_algorithm='cd', dict_init=D, positive_code=True, code_init=init_code,
                                           n_jobs=os.cpu_count() - 4,
