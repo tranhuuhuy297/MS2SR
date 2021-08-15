@@ -81,6 +81,7 @@ def main():
                     cmd += ' --timeout {}'.format(args.timeout)
                     cmd += ' --nrun {}'.format(args.nrun)
 
+                print(cmd)
                 os.system(cmd)
                 iteration.set_description(
                     'Dataset {} mon_rate: {} - testset {} - cs {}'.format(dataset_name, mon_rate[d], test, cs))
