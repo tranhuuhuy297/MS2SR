@@ -4,7 +4,7 @@ import numpy as np
 import math
 from dictionary import DCTDictionary
 from ksvd import KSVD
-from pursuit import MatchingPursuit, Solver_l0
+from pursuit import MatchingPursuit, sparse_coding
 
 a = np.random.randint(0, 1000, (1000, 1000))
 # b = torch.Tensor(a).to('cuda:0')
@@ -15,19 +15,19 @@ a = np.random.randint(0, 1000, (1000, 1000))
 
 seq_len_x = 12
 seq_len_y = 12
+mon_rate = 1
 
 
-def get_psi(X, samples=4000, iterator=100):
+def get_psi(X, samples=40):
     X_temp = np.array([np.max(X[seq_len_x + i:
                                 seq_len_x + i + seq_len_y], axis=0) for i in
                        range(samples - seq_len_x - seq_len_y)]).T
 
-    size_D = int(math.sqrt(X.shape[1]))
+    N = X.shape[1]
+    D = DCTDictionary(N, N)
 
-    D = DCTDictionary(size_D, size_D)
-
-    psi, alpha = KSVD(D, MatchingPursuit, sparsity=int(2 / 100 * X.shape[1])).fit(X_temp, iterator)
-    return psi, alpha
+    psiT, ST = KSVD(D, MatchingPursuit, sparsity=int(mon_rate / 100 * X.shape[1])).fit(X_temp)
+    return psiT, ST
 
 
 # file = 'abilene_tm_2_12_12_psi.pkl'
@@ -48,3 +48,4 @@ data = loadmat(datapath)['X']
 data = np.reshape(data, newshape=(data.shape[0], -1))
 
 psi, alpha = get_psi(X=data)
+print(psi.shape)

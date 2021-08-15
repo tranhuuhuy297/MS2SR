@@ -30,9 +30,8 @@ def get_psi(args, samples=40):
                                 args.seq_len_x + i + args.seq_len_y], axis=0) for i in
                        range(samples - args.seq_len_x - args.seq_len_y)]).T
 
-    size_D = int(math.sqrt(X.shape[1]))
-
-    D = DCTDictionary(size_D, size_D)
+    N_F = X.shape[1]
+    D = DCTDictionary(N_F, N_F)
 
     psiT, ST = KSVD(D, MatchingPursuit, sparsity=int(args.mon_rate / 100 * X.shape[1])).fit(X_temp)
     return psiT, ST
