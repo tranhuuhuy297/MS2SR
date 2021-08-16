@@ -7,6 +7,7 @@ from tqdm import trange
 
 MON_RATE = np.arange(1, 30)
 
+
 def call(args):
     p = sp.run(args=args,
                stdout=sp.PIPE,
