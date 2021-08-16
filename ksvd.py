@@ -71,7 +71,7 @@ class KSVD:
         init_code = np.zeros(shape=(n, N_C))
         dict_learner = DictionaryLearning(n_components=N_C, transform_algorithm='lasso_lars', random_state=42,
                                           fit_algorithm='cd', dict_init=D, positive_code=True, code_init=init_code,
-                                          n_jobs=os.cpu_count() - 4,
+                                          # n_jobs=os.cpu_count() - 4,
                                           max_iter=1000, verbose=self.verbose)
         self.code = dict_learner.fit_transform(X)
         self.dictionary = np.array(dict_learner.components_)
