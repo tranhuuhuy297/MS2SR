@@ -211,7 +211,7 @@ def main(args, **model_kwargs):
 
             y_cs_i = np.dot(ShatT, psiT)  # shape: (1, N_F)
             y_cs[i] = y_cs_i
-            y_cs[i, :, topk_index[i]] = yhat[i]
+            y_cs[i, 0, topk_index[i]] = yhat[i, 0, :]
 
     else:
         print('|--- No traffic reconstruction')
