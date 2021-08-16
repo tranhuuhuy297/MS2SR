@@ -197,6 +197,8 @@ def main(args, **model_kwargs):
         phi = get_phi(topk_index, total_series)
         print('psiT: ', psiT.shape)
         print('phi: ', phi.shape)
+        print('topk_index: ', topk_index.shape)
+        print('yhat: ', yhat.shape)
 
         y_cs = np.zeros(shape=(ygt_shape[0], 1, total_series))
         # traffic reconstruction using compressive sensing
@@ -205,7 +207,7 @@ def main(args, **model_kwargs):
             ShatT = sparse_coding(ZT=yhat[i], phiT=phi[i].T, psiT=psiT)  # shape(1, N_F)
             # print(yhat[i].shape, ' ', phi[i].T.shape, ' ', psiT.shape, ' ', ShatT.shape)
 
-            y_cs_i = np.dot(ShatT, psiT) # shape: (1, N_F)
+            y_cs_i = np.dot(ShatT, psiT)  # shape: (1, N_F)
             y_cs[i] = y_cs_i
             y_cs[i, :, topk_index[i]] = yhat[i]
 
