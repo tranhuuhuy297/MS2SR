@@ -2,9 +2,10 @@ import argparse
 import os
 import subprocess as sp
 
+import numpy as np
 from tqdm import trange
 
-MON_RATE = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 25, 30]
+MON_RATE = np.arange(1, 30)
 
 def call(args):
     p = sp.run(args=args,
