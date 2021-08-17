@@ -38,6 +38,7 @@ def get_args():
                         help='Test set, (default 0)')
     parser.add_argument('--nrun', type=int, default=30)
     parser.add_argument('--timeout', type=float, default=1.0)
+    parser.add_argument('--epochs', type=int, default=100, help='')
 
     args = parser.parse_args()
     return args
@@ -76,6 +77,7 @@ def main():
                 cmd += ' --mon_rate {}'.format(mon_rate[d])
                 cmd += ' --device {}'.format(args.device)
                 cmd += ' --fs {}'.format(args.fs)
+                cmd += ' --epochs {}'.format(args.epochs)
                 if args.test:
                     cmd += ' --test'
                     cmd += ' --testset {} --cs {}'.format(test, cs)
