@@ -5,7 +5,7 @@ import subprocess as sp
 import numpy as np
 from tqdm import trange
 
-MON_RATE = np.arange(1, 30)
+MON_RATE = np.arange(1, 31)
 
 
 def call(args):
