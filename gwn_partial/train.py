@@ -257,7 +257,7 @@ def main(args, **model_kwargs):
 
     if args.run_te != 'None':
         run_te(x_gt, y_gt, y_cs, args)
-from datetime import date
+from datetime import datetime
 if __name__ == "__main__":
     args = utils.get_args()
     t1 = time.time()
@@ -265,4 +265,4 @@ if __name__ == "__main__":
     t2 = time.time()
     mins = (t2 - t1) / 60
     print("Total time spent: {:.2f} seconds".format(mins))
-    print('Date&Time: ', date.today())
+    print('Date&Time: ', datetime.now())
