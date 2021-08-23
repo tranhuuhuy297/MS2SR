@@ -225,6 +225,7 @@ def main(args, **model_kwargs):
     np.save(os.path.join(logger.log_dir, 'y_gt_test_{}'.format(args.testset)), y_gt)
     np.save(os.path.join(logger.log_dir, 'y_cs_test_{}'.format(args.testset)), y_cs)
     np.save(os.path.join(logger.log_dir, 'y_real_test_{}'.format(args.testset)), y_real)
+    np.save(os.path.join(logger.log_dir, 'y_hat_test_{}'.format(args.testset)), yhat)
 
     print('\n{} testset: {} mon_rate:{} cs: {}'.format(args.dataset, args.testset, args.mon_rate, args.cs))
     if args.run_te != 'None':
