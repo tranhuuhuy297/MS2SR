@@ -33,8 +33,8 @@ class MinMaxScaler_torch:
 class StandardScaler_torch:
 
     def __init__(self):
-        self.means = 0
-        self.stds = 0
+        self.means = None
+        self.stds = None
 
     def fit(self, data):
         self.means = torch.mean(data, dim=0)
@@ -66,6 +66,15 @@ class StandardScaler_torch:
 
         return data
 
+    def set_means_stds(self, means, stds, device):
+        self.means = torch.Tensor(means)
+        self.means = self.means.to(device)
+        self.stds = torch.Tensor(stds)
+        self.stds = self.stds.to(device)
+
+    def get_mean_stds_numpy(self):
+        return self.means.cpu().data.numpy(), self.stds.cpu().data.numpy()
+
 
 def granularity(data, k):
     if k == 1:
@@ -91,7 +100,9 @@ class PartialTrafficDataset(Dataset):
         self.Xgt = self.np2torch(dataset['Xgt'])
         self.Ygt = self.np2torch(dataset['Ygt'])
         self.Topkindex = dataset['Topkindex']
-        self.scaler_topk = dataset['Scaler_topk']
+
+        self.scaler_topk = StandardScaler_torch()
+        self.scaler_topk.set_means_stds(dataset['Scaler_topk'][0], dataset['Scaler_topk'][1], args.device)
 
         self.nsample, self.len_x, self.nflows, self.nfeatures = self.Xtopk.shape
 
@@ -185,17 +196,20 @@ def data_preprocessing(data, topk_index, args, gen_times=5, scaler_top_k=None):
     X_top_k = np2torch(X_top_k, args.device)
 
     # scaling data
+    scaler = StandardScaler_torch()
     if scaler_top_k is None:
-        scaler_top_k = StandardScaler_torch()
-        scaler_top_k.fit(X_top_k)
+        scaler.fit(X_top_k)
+    else:
+        scaler.set_means_stds(scaler_top_k[0], scaler_top_k[1], args.device)
 
-    X_scaled_top_k = scaler_top_k.transform(X_top_k)
+    X_scaled_top_k = scaler.transform(X_top_k)
 
     len_x = args.seq_len_x
     len_y = args.seq_len_y
 
+    scaler_means, scaler_std = scaler.get_mean_stds_numpy()
     dataset = {'Xtopk': [], 'Ytopk': [], 'Xgt': [], 'Ygt': [], 'Yreal': [],
-               'Topkindex': topk_index, 'Scaler_topk': scaler_top_k, 'device': args.device}
+               'Topkindex': topk_index, 'Scaler_topk': [scaler_means, scaler_std], 'device': args.device}
 
     skip = 1
     start_idx = 0
@@ -205,8 +219,12 @@ def data_preprocessing(data, topk_index, args, gen_times=5, scaler_top_k=None):
                 x_scaled_topk, y_topk, y_real, x_gt, y_gt = topk_train(Xscaledtopk=X_scaled_top_k,
                                                                        Xtopk=X_top_k,
                                                                        X=X, oX=oX, t=t, args=args)
+
             else:
                 raise RuntimeError('No flow selection!')
+
+            if torch.max(x_gt) <= 1.0 or torch.max(y_gt) <= 1.0:
+                continue
 
             dataset['Xtopk'].append(x_scaled_topk)  # [sample, len_x, k, 1]
             dataset['Ytopk'].append(y_topk)  # [sample, 1, k]
