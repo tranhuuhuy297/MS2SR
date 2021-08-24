@@ -19,7 +19,8 @@ mon_rate = 1
 
 
 def get_psi(X, samples=4000):
-    X = X[:samples]
+    X = X[:7000]
+    # X = X[-samples:]
     X_temp = np.array([np.max(X[seq_len_x + i:
                                 seq_len_x + i + seq_len_y], axis=0) for i in
                        range(samples - seq_len_x - seq_len_y)])
@@ -44,7 +45,7 @@ def get_psi(X, samples=4000):
 # print(np.where(alpha[alpha < 0]))
 
 
-datapath = '/home/anle/data/data/abilene_tm.mat'
+datapath = '/home/anle/data/data/geant_tm.mat'
 data = loadmat(datapath)['X']
 data = np.reshape(data, newshape=(data.shape[0], -1))
 
