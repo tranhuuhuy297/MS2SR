@@ -9,7 +9,7 @@ import utils
 from tqdm import trange
 from routing import *
 from ksvd import KSVD
-from pursuit import MatchingPursuit, sparse_coding
+from pursuit import sparse_coding
 import pickle
 import warnings
 
@@ -35,7 +35,7 @@ def get_psi(args, samples=4000):
 
     D = np.zeros(shape=(size_D, size_D))
 
-    psiT, ST = KSVD(D, MatchingPursuit, int(args.mon_rate / 100 * X.shape[1])).fit(X_temp)
+    psiT, ST = KSVD(D).fit(X_temp)
     return psiT, ST
 
 
