@@ -3,13 +3,11 @@ import sys
 sys.path.append('..')
 
 import time
-import math
 import models
 import torch
 import utils
 from tqdm import trange
 from routing import *
-from dictionary import DCTDictionary
 from ksvd import KSVD
 from pursuit import MatchingPursuit, sparse_coding
 import pickle
@@ -23,12 +21,15 @@ warnings.filterwarnings("ignore", category=UserWarning)
 
 def get_psi(args, samples=4000):
     X = utils.load_raw(args)
+    train, val, test_list = utils.train_test_split(X)
 
-    X = X[-samples:]
+    X = train[-samples:]
 
     X_temp = np.array([np.max(X[args.seq_len_x + i:
                                 args.seq_len_x + i + args.seq_len_y], axis=0) for i in
                        range(samples - args.seq_len_x - args.seq_len_y)])
+    X_temp_max = np.max(X_temp, axis=1)
+    X_temp = X_temp[X_temp_max > 1.0]
 
     size_D = X.shape[1]
 
