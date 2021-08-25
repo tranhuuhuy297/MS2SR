@@ -74,7 +74,7 @@ def get_args():
     parser.add_argument('--test_batch_size', type=int, default=1)
     parser.add_argument('--device', type=str, default='cuda:0')
 
-    parser.add_argument('--epochs', type=int, default=100, help='')
+    parser.add_argument('--epochs', type=int, default=300, help='')
     parser.add_argument('--clip', type=int, default=3, help='Gradient Clipping')
     parser.add_argument('--weight_decay', type=float, default=0.0001, help='weight decay rate')
     parser.add_argument('--learning_rate', type=float, default=0.001, help='learning rate')
