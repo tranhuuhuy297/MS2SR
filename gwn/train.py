@@ -33,7 +33,7 @@ def get_psi(args, samples=4000):
     N_F = X.shape[1]
     D = np.zeros(shape=(N_F, N_F))
 
-    psiT, ST = KSVD(D, MatchingPursuit, sparsity=int(args.mon_rate / 100 * X.shape[1])).fit(X_temp)
+    psiT, ST = KSVD(D, MatchingPursuit).fit(X_temp)
     return psiT, ST
 
 
