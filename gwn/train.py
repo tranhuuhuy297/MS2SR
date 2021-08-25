@@ -9,7 +9,7 @@ import utils
 from tqdm import trange
 from routing import *
 from ksvd import KSVD
-from pursuit import MatchingPursuit, sparse_coding
+from pursuit import sparse_coding
 import pickle
 import warnings
 # ssh aiotlab@202.191.57.61 -p 1111
@@ -33,7 +33,7 @@ def get_psi(args, samples=4000):
     N_F = X.shape[1]
     D = np.zeros(shape=(N_F, N_F))
 
-    psiT, ST = KSVD(D, MatchingPursuit).fit(X_temp)
+    psiT, ST = KSVD(D).fit(X_temp)
     return psiT, ST
 
 
