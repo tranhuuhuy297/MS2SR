@@ -12,7 +12,6 @@ from ksvd import KSVD
 from pursuit import sparse_coding
 import pickle
 import warnings
-# ssh aiotlab@202.191.57.61 -p 1111
 
 warnings.simplefilter("ignore")
 warnings.filterwarnings("ignore", category=UserWarning)
