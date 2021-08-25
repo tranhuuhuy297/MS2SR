@@ -3,18 +3,15 @@ from datetime import datetime
 sys.path.append('..')
 
 import time
-import math
 import models
 import torch
 import utils
 from tqdm import trange
 from routing import *
-from dictionary import DCTDictionary
 from ksvd import KSVD
 from pursuit import MatchingPursuit, sparse_coding
 import pickle
 import warnings
-
 # ssh aiotlab@202.191.57.61 -p 1111
 
 warnings.simplefilter("ignore")
@@ -29,6 +26,9 @@ def get_psi(args, samples=4000):
     X_temp = np.array([np.max(X[args.seq_len_x + i:
                                 args.seq_len_x + i + args.seq_len_y], axis=0) for i in
                        range(samples - args.seq_len_x - args.seq_len_y)])
+
+    X_temp_max = np.max(X_temp, axis=1)
+    X_temp = X_temp[X_temp_max > 1.0]
 
     N_F = X.shape[1]
     D = np.zeros(shape=(N_F, N_F))
