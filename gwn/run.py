@@ -38,7 +38,7 @@ def get_args():
                         help='Test set, (default 0)')
     parser.add_argument('--nrun', type=int, default=30)
     parser.add_argument('--timeout', type=float, default=1.0)
-    parser.add_argument('--epochs', type=int, default=100, help='')
+    parser.add_argument('--epochs', type=int, default=300, help='')
 
     args = parser.parse_args()
     return args
