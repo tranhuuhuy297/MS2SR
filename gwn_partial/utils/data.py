@@ -356,7 +356,7 @@ def data_preprocessing(data, args, gen_times=5, scaler_top_k=None):
             else:
                 raise RuntimeError('No flow selection!')
 
-            if torch.max(x_gt) <= 1.0 or torch.max(y_gt) <= 1.0:
+            if np.max(x_gt) <= 1.0 or np.max(y_gt) <= 1.0:
                 continue
 
             dataset['Xtopk'].append(x_topk)  # [sample, len_x, k, 1]
